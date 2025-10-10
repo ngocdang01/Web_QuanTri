@@ -170,9 +170,9 @@ tr:hover {
   border-collapse: separate;
   border-spacing: 0;
   background: var(--color-surface);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
   margin-top: 2rem;
   font-family: 'Segoe UI', Arial, sans-serif;
 }
