@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import './App.css';
+
 // Placeholder component cho admin dashboard
 const AdminDashboard = () => <div>Admin Dashboard</div>;
 function App() {
@@ -13,14 +14,16 @@ function App() {
     <Routes>
       <Route path='/login' element={<Login/>}/>
       <Route
-       path='/admin/dashboard' element={
+       path='/admin/dashboard'
+        element={
         <ProtectedRoute requireAdmin={true}>
           <AdminDashboard/>
         </ProtectedRoute>
        }
         />
         <Route
-        path='/' element={
+        path='/' 
+        element={
           <ProtectedRoute>
             <Home/>
           </ProtectedRoute>

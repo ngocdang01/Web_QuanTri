@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../config/api'; // vẫn dùng file api giống bản đầy đủ
+import axios from 'axios';
 import logo_shop from '../assets/logo_shop.png';
 import '../styles/Login.css';
 
@@ -13,16 +13,17 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Gọi API đăng nhập
-      const response = await authAPI.login({ email, password });
-
-      if (response.token) {
+      const response = await axios.post('http://localhost:3002/api/login', {
+        email,
+        password
+      }); 
+      if (response.data.token) {
         // Lưu token và role vào localStorage
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('role', response.role);
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('role', response.data.role);
 
         // Chuyển hướng tùy theo role
-        if (response.role === 'admin') {
+        if (response.data.role === 'admin') {
           navigate('/admin/dashboard');
         } else {
           navigate('/');
@@ -35,19 +36,13 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <div className="login-box simple">
-        <div className="logo-container">
-          <img src={logo_shop} alt="FShop" className="logo small" />
-        </div>
-        <h2>Đăng nhập</h2>
-
+      <div className="login-box">
+      <h2>Đăng nhập</h2>
         {error && <div className="error-message">{error}</div>}
-
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <input
               type="text"
-              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -55,16 +50,16 @@ const Login = () => {
           </div>
 
           <div className="form-group">
+            <label>Mật khẩu:</label>
             <input
               type="password"
-              placeholder="Mật khẩu"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
 
-          <button type="submit" className="login-btn">Đăng nhập</button>
+          <button type="submit">Đăng nhập</button>
         </form>
       </div>
     </div>
