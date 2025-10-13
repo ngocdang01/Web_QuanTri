@@ -2,6 +2,7 @@ import React, { useState} from 'react';
 import Dashboard from './Dashboard';
 import User from './User';
 import Product from './Product';
+import Order from './Order';
 import '../styles/Home.css';
 
 const Home = () => {
@@ -15,12 +16,14 @@ const Home = () => {
           <li className={tab==='dashboard' ? 'active' : ''} onClick={()=>setTab('dashboard')}>Thống kê</li>
           <li className={tab==='users' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý người dùng</li>
           <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý sản phẩm</li>
+          <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý đơn hàng</li>
         </ul>
       </aside>
       <main className="main-content">
         {tab === 'dashboard' && <Dashboard />}
         {tab === 'users' && <User />}
         {tab === 'products' && <Product />}
+        {tab === 'orders' && <Order />}
       </main>
     </div>
   );
