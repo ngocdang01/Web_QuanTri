@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/Web_QuanTri/static/css/main.adcfc62e.css",
+    "main.js": "/Web_QuanTri/static/js/main.639ff384.js",
+    "static/js/453.ed7fc45c.chunk.js": "/Web_QuanTri/static/js/453.ed7fc45c.chunk.js",
+    "static/media/logo_shop.png": "/Web_QuanTri/static/media/logo_shop.8866a7465d525f39d5bf.png",
+    "index.html": "/Web_QuanTri/index.html",
+    "main.adcfc62e.css.map": "/Web_QuanTri/static/css/main.adcfc62e.css.map",
+    "main.639ff384.js.map": "/Web_QuanTri/static/js/main.639ff384.js.map",
+    "453.ed7fc45c.chunk.js.map": "/Web_QuanTri/static/js/453.ed7fc45c.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.adcfc62e.css",
+    "static/js/main.639ff384.js"
+  ]
+}
