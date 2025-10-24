@@ -1,174 +1,95 @@
-import axios from 'axios';
+// API Configuration
+const API_BASE_URL = 'http://localhost:3002/api';
 
-// Cấu hình base URL cho API
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// API Endpoints
+export const API_ENDPOINTS = {
+    // Product endpoints
+    PRODUCTS: {
+        LIST: `${API_BASE_URL}/products`,
+        DETAIL: (id) => `${API_BASE_URL}/products/${id}`,
+        CREATE: `${API_BASE_URL}/products`,
+        UPDATE: (id) => `${API_BASE_URL}/products/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/products/${id}`,
+    }
+};
 
-// Tạo instance axios với cấu hình mặc định
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// API Headers
+export const getHeaders = (token = null) => {
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    };
 
-// Interceptor để thêm token vào header
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+        headers['Authorization'] = `Bearer ${token}`;
     }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
-// Interceptor để xử lý response
-apiClient.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token hết hạn, xóa token và chuyển về trang login
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-// API cho authentication
-export const authAPI = {
-  login: async (credentials) => {
-    try {
-      const response = await apiClient.post('/auth/login', credentials);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  logout: async () => {
-    try {
-      await apiClient.post('/auth/logout');
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
-    } catch (error) {
-      // Vẫn xóa token ngay cả khi API call thất bại
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
-    }
-  },
-  
-  getProfile: async () => {
-    try {
-      const response = await apiClient.get('/auth/profile');
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
+    return headers;
 };
 
-// API cho products
+// API Response Handler
+export const handleResponse = async (response) => {
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Something went wrong');
+    }
+    return response.json();
+};
+
+// Product API Services
 export const productAPI = {
-  getAll: async () => {
-    try {
-      const response = await apiClient.get('/products');
-      return response;
-    } catch (error) {
-      throw error;
+    // Get all products
+    getAllProducts: async () => {
+        const response = await fetch(API_ENDPOINTS.PRODUCTS.LIST, {
+            headers: getHeaders()
+        });
+        return handleResponse(response);
+    },
+
+    // Get product by ID
+    getProductById: async (id) => {
+        const response = await fetch(API_ENDPOINTS.PRODUCTS.DETAIL(id), {
+            headers: getHeaders()
+        });
+        return handleResponse(response);
+    },
+
+    // Create new product
+    createProduct: async (productData) => {
+        const response = await fetch(API_ENDPOINTS.PRODUCTS.CREATE, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(productData)
+        });
+        return handleResponse(response);
+    },
+
+    // Update product
+    updateProduct: async (id, productData) => {
+        const response = await fetch(API_ENDPOINTS.PRODUCTS.UPDATE(id), {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify(productData)
+        });
+        return handleResponse(response);
+    },
+
+    // Delete product
+    deleteProduct: async (id) => {
+        const response = await fetch(API_ENDPOINTS.PRODUCTS.DELETE(id), {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        return handleResponse(response);
     }
-  },
-  
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/products/${id}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  create: async (productData) => {
-    try {
-      const response = await apiClient.post('/products', productData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  update: async (id, productData) => {
-    try {
-      const response = await apiClient.put(`/products/${id}`, productData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/products/${id}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
 };
 
-// API cho users
-export const userAPI = {
-  getAll: async () => {
-    try {
-      const response = await apiClient.get('/users');
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/users/${id}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  create: async (userData) => {
-    try {
-      const response = await apiClient.post('/users', userData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  update: async (id, userData) => {
-    try {
-      const response = await apiClient.put(`/users/${id}`, userData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/users/${id}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
+const apiConfig = {
+  API_BASE_URL,
+  API_ENDPOINTS,
+  getHeaders,
+  handleResponse,
+  productAPI
 };
 
-export default apiClient;
+export default apiConfig;
