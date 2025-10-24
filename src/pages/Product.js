@@ -30,12 +30,31 @@ const Product = () => {
     }
   };
 
+  // Delete product
+  const handleDelete = async (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
+      try {
+        await productAPI.deleteProduct(id);
+        setProducts(products.filter((p) => p._id !== id));
+        alert("Xóa sản phẩm thành công!");
+      } catch (err) {
+        alert("Không thể xóa sản phẩm");
+        console.error("Error deleting product:", err);
+      }
+    }
+  };
+
   if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return (
     <div className="product-container">
-      <h2>Quản lý sản phẩm</h2>
+       <div className="product-header">
+                <h2>Quản lý sản phẩm</h2>
+                <button className="btn btn-add" onClick={() => {/* TODO: Hiện form thêm sản phẩm */}}>
+                    Thêm
+                </button>
+            </div>
       <div className="table-responsive">
         <table className="product-table">
           <thead>
@@ -77,10 +96,8 @@ const Product = () => {
                       Sửa
                     </button>
                     <button
+                      onClick={() => handleDelete(product._id)}
                       className="btn btn-delete"
-                      onClick={() => {
-                        /* TODO: Implement edit */
-                      }}
                     >
                       Xóa
                     </button>
