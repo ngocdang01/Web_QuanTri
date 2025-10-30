@@ -11,8 +11,11 @@ const Product = () => {
     name: "",
     price: "",
     stock: "",
+    sold: "",
     description: "",
-    image: ""
+    images: [""],
+    size: ["M"],
+    categoryCode: "",
   });
   // Fetch products on component mount
   useEffect(() => {
@@ -42,27 +45,87 @@ const Product = () => {
     const { name, value } = e.target;
     setNewProduct(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+  };
+
+  // Handle images change
+  const handleImagesChange = (index, value) => {
+    setNewProduct(prev => {
+      const newImages = [...prev.images];
+      newImages[index] = value;
+      return {
+        ...prev,
+        images: newImages,
+      };
+    });
+  };
+
+  // Add new image field
+  const addImageField = () => {
+    setNewProduct((prev) => ({
+      ...prev,
+      images: [...prev.images, ""],
+    }));
+  };
+
+  // Remove image field
+  const removeImageField = (index) => {
+    setNewProduct((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Handle size change
+  const handleSizeChange = (e) => {
+    const { value, checked } = e.target;
+    setNewProduct((prev) => {
+      let newSizes = [...prev.size];
+      if (checked) {
+        if (!newSizes.includes(value)) {
+          newSizes.push(value);
+        }
+      } else {
+        newSizes = newSizes.filter((size) => size !== value);
+      }
+      return {
+        ...prev,
+        size: newSizes,
+      };
+    });
   };
 
   // Hanle form submit
   const handleSubmit = async (e) => {
-    e.prevenDefault();
+    e.preventDefault();
     try {
-      const response = await productAPI.createProduct(newProduct);
+      // Filter out empty image URLs
+      const filteredImages = newProduct.images.filter(img => img.trim() !== '');
+      
+      // Chuyển đổi price và stock thành số
+      const productData = {
+        ...newProduct,
+        price: Number(newProduct.price),
+        stock: Number(newProduct.stock),
+        images: filteredImages
+      };
+      
+      const response = await productAPI.createProduct(productData);
       setProducts([...products, response]);
       setShowAddForm(false);
       setNewProduct({
         name: "",
         price: "",
         description: "",
-        image: ""
+        image: "",
       });
       alert("Thêm sản phẩm thành công!");
     } catch (error) {
-        alert("Không thể thêm sản phẩm");
-        console.error("Error adding product:", error);
+      alert(
+        "Không thể thêm sản phẩm: " + (error.message || "Lỗi không xác định")
+      );
+      console.error("Error adding product:", error);
     }
   };
 
@@ -85,83 +148,124 @@ const Product = () => {
 
   return (
     <div className="product-container">
-       <div className="product-header">
-                <h2>Quản lý sản phẩm</h2>
-                <button 
-                className="btn btn-add" 
-                onClick={() => setShowAddForm(true)}
-                >
-                    Thêm
-                </button>
+      <div className="product-header">
+        <h2>Quản lý sản phẩm</h2>
+        <button className="btn btn-add" onClick={() => setShowAddForm(true)}>
+          Thêm
+        </button>
+      </div>
+      {showAddForm && (
+        <div className="add-product-form">
+          <div
+            className="form-overlay"
+            onClick={() => setShowAddForm(false)}
+          ></div>
+          <form onSubmit={handleSubmit} className="form-content">
+            <h3>Thêm sản phẩm mới</h3>
+            <div className="form-group">
+              <label>Tên sản phẩm:</label>
+              <input
+                type="text"
+                name="name"
+                value={newProduct.name}
+                onChange={handleInputChange}
+                required
+              />
             </div>
-            {showAddForm && (
-                <div className="add-product-form">
-                    <div className="form-overlay" onClick={() => setShowAddForm(false)}></div>
-                    <form onSubmit={handleSubmit} className="form-content">
-                        <h3>Thêm sản phẩm mới</h3>
-                        <div className="form-group">
-                            <label>Tên sản phẩm:</label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={newProduct.name}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Giá:</label>
-                            <input
-                                type="number"
-                                name="price"
-                                value={newProduct.price}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Số lượng:</label>
-                            <input
-                                type="number"
-                                name="stock"
-                                value={newProduct.stock}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Mô tả:</label>
-                            <textarea
-                                name="description"
-                                value={newProduct.description}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Link hình ảnh:</label>
-                            <input
-                                type="url"
-                                name="image"
-                                value={newProduct.image}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-buttons">
-                            <button type="submit" className="btn btn-submit">Lưu</button>
-                            <button 
-                                type="button" 
-                                className="btn btn-cancel"
-                                onClick={() => setShowAddForm(false)}
-                            >
-                                Hủy
-                            </button>
-                        </div>
-                    </form>
+            <div className="form-group">
+              <label>Giá:</label>
+              <input
+                type="number"
+                name="price"
+                value={newProduct.price}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Số lượng:</label>
+              <input
+                type="number"
+                name="stock"
+                value={newProduct.stock}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Mô tả:</label>
+              <textarea
+                name="description"
+                value={newProduct.description}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Link hình ảnh:</label>
+              {newProduct.images.map((image, index) => (
+                <div key={index} className="image-input-group">
+                  <input
+                    type="url"
+                    value={image}
+                    onChange={(e) => handleImagesChange(index, e.target.value)}
+                    placeholder={`Link hinh anh ${index + 1}`}
+                    required={index === 0}
+                  />
+                  {newProduct.images.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-remove"
+                      onClick={() => removeImageField(index)}
+                    >
+                      Xóa
+                    </button>
+                  )}
                 </div>
-            )}
-            
+              ))}
+            </div>
+            <div className="form-group">
+              <label>Mã danh mục:</label>
+              <input
+                type="text"
+                name="categoryCode"
+                value={newProduct.categoryCode}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Size có sẵn:</label>
+              <div className="size-checkboxes">
+                {["S", "M", "L"].map((size) => (
+                  <label key={size} className="size-checkbox">
+                    <input
+                      type="checkbox"
+                      value={size}
+                      checked={newProduct.size.includes(size)}
+                      onChange={handleSizeChange}
+                    />
+                    <span>{size}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="form-buttons">
+              <button type="submit" className="btn btn-submit">
+                Lưu
+              </button>
+              <button
+                type="button"
+                className="btn btn-cancel"
+                onClick={() => setShowAddForm(false)}
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="table-responsive">
         <table className="product-table">
           <thead>
@@ -180,7 +284,7 @@ const Product = () => {
               <tr key={product._id}>
                 <td>{product._id}</td>
                 <td>{product.name}</td>
-                <td>{product.price.toLocaleString("vi-VN")} VNĐ</td>
+                <td>{product.price?.toLocaleString("vi-VN") || "N/A"} VNĐ</td>
                 <td>
                   {
                     <img
