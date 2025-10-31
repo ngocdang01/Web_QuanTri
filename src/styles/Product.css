@@ -39,7 +39,9 @@
 }
 
 .product-table th {
-    background: #f4f6fb;
+    /* background: #f4f6fb; */
+    /* background: #dfe6fd; */
+    background: #e0e7ff;
     color: #22223b;
     font-weight: 700;
     letter-spacing: 0.5px;

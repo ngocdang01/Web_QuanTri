@@ -3,6 +3,9 @@ const API_BASE_URL = 'http://localhost:3002/api';
 
 // API Endpoints
 export const API_ENDPOINTS = {
+    CATEGORIES: {
+        LIST: `${API_BASE_URL}/categories`
+    },
     // Product endpoints
     PRODUCTS: {
         LIST: `${API_BASE_URL}/products`,
@@ -35,7 +38,15 @@ export const handleResponse = async (response) => {
     }
     return response.json();
 };
-
+// === CATEGORIES ===
+export const categoryAPI = {
+    getAllCategories: async () => {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES.LIST, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    }
+};
 // Product API Services
 export const productAPI = {
     // Get all products

@@ -4,6 +4,7 @@ import User from './User';
 import Product from './Product';
 import Order from './Order';
 import '../styles/Home.css';
+import AdminCategories from './AdminCategories';
 
 const Home = () => {
    const [tab, setTab] = useState('dashboard');
@@ -15,6 +16,7 @@ const Home = () => {
         <ul>
           <li className={tab==='dashboard' ? 'active' : ''} onClick={()=>setTab('dashboard')}>Thống kê</li>
           <li className={tab==='users' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý người dùng</li>
+          <li className={tab==='categories' ? 'active' : ''} onClick={()=>setTab('categories')}>Quản lý danh mục</li>
           <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('products')}>Quản lý sản phẩm</li>
           <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý đơn hàng</li>
         </ul>
@@ -22,15 +24,12 @@ const Home = () => {
       <main className="main-content">
         {tab === 'dashboard' && <Dashboard />}
         {tab === 'users' && <User />}
+        {tab === 'categories' && <AdminCategories />}
         {tab === 'products' && <Product />}
         {tab === 'orders' && <Order />}
       </main>
     </div>
   );
-
-  
-
-  // Dữ liệu cứng cho đơn hàng gần đây
-}
+};
 
 export default Home; 
