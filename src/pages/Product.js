@@ -10,11 +10,11 @@ const Product = () => {
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
-    stock: "",
+    stock: 0,
     sold: "",
     description: "",
     images: [""],
-    size: ["M"],
+    size_items: [],
     categoryCode: "",
   });
   // Fetch products on component mount
@@ -25,12 +25,8 @@ const Product = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await productAPI.getAllProducts();
-      if (res.success) {
-        setProducts(res.data);
-      } else {
-        setProducts([]);
-      }
+      const data = await productAPI.getAllProducts();
+      setProducts(data);
       setError(null);
     } catch (err) {
       setError("Không thể tải danh sách sản phẩm");
@@ -77,57 +73,86 @@ const Product = () => {
     }));
   };
 
-  // Handle size change
-  const handleSizeChange = (e) => {
-    const { value, checked } = e.target;
-    setNewProduct((prev) => {
-      let newSizes = [...prev.size];
-      if (checked) {
-        if (!newSizes.includes(value)) {
-          newSizes.push(value);
-        }
-      } else {
-        newSizes = newSizes.filter((size) => size !== value);
-      }
-      return {
-        ...prev,
-        size: newSizes,
-      };
-    });
-  };
-
   // Hanle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+    //Validate
+    if (!newProduct.name.trim()){
+      alert("Vui lòng nhập tên sản phẩm!");
+      return;
+    }
+    if (
+      newProduct.images.length === 0 ||
+      newProduct.images.every((img) => !img.trim())
+    ) {
+      alert("Vui lòng nhập ít nhất một link hình ảnh!");
+      return;
+    }
+    if ( newProduct.size_items.length === 0) {
+      alert("Vui lòng chọn ít nhất một size!");
+      return;
+    }
+    if (!newProduct.description.trim()){
+      alert("Vui lòng nhập mô tả sản phẩm!");
+      return;
+    }
     try {
       // Filter out empty image URLs
       const filteredImages = newProduct.images.filter(img => img.trim() !== '');
       
+      newProduct.stock = newProduct.size_items.reduce((acc, item) => acc + item.quantity, 0);
       // Chuyển đổi price và stock thành số
       const productData = {
         ...newProduct,
         price: Number(newProduct.price),
-        stock: Number(newProduct.stock),
+        sold: Number(newProduct.sold || 0),
         images: filteredImages
       };
       
-      const response = await productAPI.createProduct(productData);
-      setProducts([...products, response]);
+      await productAPI.createProduct(productData);
+      fetchProducts();
       setShowAddForm(false);
       setNewProduct({
         name: "",
         price: "",
+        stock: 0,
+        sold: "",
         description: "",
-        image: "",
+        images: [""],
+        size_items: [],
+        categoryCode: "",
       });
       alert("Thêm sản phẩm thành công!");
-    } catch (error) {
+    } catch (err) {
       alert(
-        "Không thể thêm sản phẩm: " + (error.message || "Lỗi không xác định")
+        "Không thể thêm sản phẩm: " + (err.message || "Lỗi không xác định")
       );
-      console.error("Error adding product:", error);
+      console.error("Error adding product:", err);
     }
   };
+
+  const handleSizeToggle = (size, checked) => {
+    setNewProduct((prev) => {
+      let updated = [...prev.size_items];
+
+      if (checked) {
+        updated.push({ size, quantity: 0 });
+      } else {
+        updated = updated.filter((s) => s.size !== size);
+      }
+
+      return { ...prev, size_items: updated };
+    });
+  };
+
+  const handleSizeQuantityChange = (size, quantity) => {
+  setNewProduct((prev) => ({
+    ...prev,
+    size_items: prev.size_items.map((s) =>
+      s.size === size ? { ...s, quantity } : s
+    )
+  }));
+};
 
   // Delete product
   const handleDelete = async (id) => {
@@ -183,16 +208,6 @@ const Product = () => {
               />
             </div>
             <div className="form-group">
-              <label>Số lượng:</label>
-              <input
-                type="number"
-                name="stock"
-                value={newProduct.stock}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
               <label>Mô tả:</label>
               <textarea
                 name="description"
@@ -223,6 +238,12 @@ const Product = () => {
                   )}
                 </div>
               ))}
+              <button 
+                type="button"
+                className="btn btn-add-image"
+                onClick={addImageField}>
+                + Thêm hình ảnh
+              </button>
             </div>
             <div className="form-group">
               <label>Mã danh mục:</label>
@@ -235,19 +256,37 @@ const Product = () => {
             </div>
 
             <div className="form-group">
-              <label>Size có sẵn:</label>
-              <div className="size-checkboxes">
-                {["S", "M", "L"].map((size) => (
-                  <label key={size} className="size-checkbox">
-                    <input
-                      type="checkbox"
-                      value={size}
-                      checked={newProduct.size.includes(size)}
-                      onChange={handleSizeChange}
-                    />
-                    <span>{size}</span>
-                  </label>
-                ))}
+              <label>Size và số lượng:</label>
+              <div className="size-list">
+                {["S", "M", "L", "XL"].map((size) => {
+                  const selected = newProduct.size_items.find((s) => s.size === size);
+                  return (
+                    <div key={size} className="size-item">
+                      <label className="size-checkbox">
+                        <input
+                          type="checkbox"
+                          value={size}
+                          checked={!!selected}
+                          onChange={(e) => handleSizeToggle(size, e.target.checked)}
+                        />
+                        <span>{size}</span>
+                      </label>
+                      {selected && (
+                        <input
+                          type="number"
+                          className="quantity-input"
+                          value={selected.quantity}
+                          min={0}
+                          onChange={(e) => 
+                            handleSizeQuantityChange(size, Number(e.target.value))
+                          }
+                          placeholder="Số lượng"
+                          required
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="form-buttons">
@@ -275,29 +314,53 @@ const Product = () => {
               <th>Giá</th>
               <th>Hình ảnh</th>
               <th>Tồn kho</th>
-              <th>Mô tả</th>
+              <th>Đã bán</th>
+              <th>Mã danh mục</th>
+              <th>Size</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
+            {/* Reload */}
             {products.map((product) => (
               <tr key={product._id}>
                 <td>{product._id}</td>
-                <td>{product.name}</td>
-                <td>{product.price?.toLocaleString("vi-VN") || "N/A"} VNĐ</td>
+                <td>{product.name ? product.name : "Không có tên"}</td>
                 <td>
-                  {
-                    <img
-                      src={product.images?.[0]}
-                      alt={product.name}
-                      className="product-image"
-                    />
-                  }
+                  {typeof product.price === "number" && !isNaN(product.price)
+                    ? product.price.toLocaleString("vi-VN") + " VNĐ"
+                    : "N/A"}
                 </td>
-                <td>{product.stock}</td>
-                <td className="description-cell">{product.description}</td>
                 <td>
-                  <div className="action-buttons">
+                  <div className="product-image">
+                    <img
+                      src={
+                        product.images && product.images.length > 0
+                          ? product.images[0]
+                          : "https://via.placeholder.com/60x60?text=No+Image"
+                      }
+                      alt={product.name ? product.name : "No name"}
+                    />
+                    {product.images && product.images.length > 1 && (
+                      <span className="image-count">
+                        +{product.images.length - 1}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td>{product.stock ?? "N/A"}</td>
+                <td>{product.sold ?? "0"}</td>
+                <td>{product.categoryCode || "N/A"}</td>
+                <td>
+                  {product.sizes && product.sizes.length > 0
+                    ? product.sizes.map(s => `${s.size} (${s.quantity})`).join(",")
+                    : "N/A"}
+                </td>
+                <td>
+                  <div 
+                  className="action-buttons"
+                  onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       className="btn btn-edit"
                       onClick={() => {
@@ -307,7 +370,10 @@ const Product = () => {
                       Sửa
                     </button>
                     <button
-                      onClick={() => handleDelete(product._id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(product._id)
+                      }}
                       className="btn btn-delete"
                     >
                       Xóa
