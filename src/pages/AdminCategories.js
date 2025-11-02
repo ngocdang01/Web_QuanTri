@@ -89,6 +89,18 @@ const AdminCategories = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
+      try {
+        await categoryAPI.deleteCategory(id);
+        setCategories(categories.filter((c) => c._id !== id));
+        alert("Xóa danh mục thành công!");
+      } catch (err) {
+        alert("Không thể xóa danh mục: ");
+        console.error("Error deleting category:", err);
+      }
+    }
+  };
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div>{error}</div>;
 
@@ -204,8 +216,11 @@ const AdminCategories = () => {
                         Sửa
                       </button>
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(category._id);
+                        }}
                         className="btn btn-delete"
-                        onClick={(e) => e.stopPropagation()}
                       >
                         Xóa
                       </button>

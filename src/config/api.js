@@ -4,7 +4,9 @@ const API_BASE_URL = 'http://localhost:3002/api';
 // API Endpoints
 export const API_ENDPOINTS = {
     CATEGORIES: {
-        LIST: `${API_BASE_URL}/categories`
+        LIST: `${API_BASE_URL}/categories`,
+        CREATE: `${API_BASE_URL}/categories/add`,
+        DELETE: (id) => `${API_BASE_URL}/categories/${id}`,
     },
     // Product endpoints
     PRODUCTS: {
@@ -43,6 +45,18 @@ export const categoryAPI = {
     getAllCategories: async () => {
         const res = await fetch(API_ENDPOINTS.CATEGORIES.LIST, {
             headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    createCategory: async (data) => {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES.CREATE, {
+            method: 'POST', headers: getHeaders(), body: JSON.stringify(data)
+        });
+        return handleResponse(res);
+    },
+    deleteCategory: async (id) => {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES.DELETE(id), {
+            method: 'DELETE', headers: getHeaders()
         });
         return handleResponse(res);
     }
