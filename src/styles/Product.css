@@ -60,15 +60,20 @@
 }
 
 .product-image {
-    width: 100px;
-    height: 60px;
+    position: relative;
+    width: 80px;
+    height: 50px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f8f8;
+}
+.product-image img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 10px;
-    border: 3px solid;
-    border-image: linear-gradient(135deg, #4a90e2, #e94e77) 1;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-    transition: border-color 0.2s;
+    border-radius: 8px;
 }
 
 .product-table tbody tr:hover .product-image {
@@ -340,4 +345,33 @@
     .btn-cancel {
         width: 100%;
     }
+}
+.btn-remove {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s;
+}
+.btn-remove:hover {
+    background: #cc0000;
+}
+
+.btn-add.image {
+    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-success) 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s;
+    margin-top: 0.5rem;
+}
+
+.btn-add.image:hover {
+    background: linear-gradient(90deg, var(--color-success) 0%, var(--color-primary) 100%);
 }

@@ -18,7 +18,6 @@ const Home = () => {
           <li className={tab==='users' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý người dùng</li>
           <li className={tab==='categories' ? 'active' : ''} onClick={()=>setTab('categories')}>Quản lý danh mục</li>
           <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('products')}>Quản lý sản phẩm</li>
-          <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý đơn hàng</li>
         </ul>
       </aside>
       <main className="main-content">
