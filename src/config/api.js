@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
     CATEGORIES: {
         LIST: `${API_BASE_URL}/categories`,
         CREATE: `${API_BASE_URL}/categories/add`,
+        UPDATE: (id) => `${API_BASE_URL}/categories/${id}`,
         DELETE: (id) => `${API_BASE_URL}/categories/${id}`,
     },
     // Product endpoints
@@ -51,6 +52,12 @@ export const categoryAPI = {
     createCategory: async (data) => {
         const res = await fetch(API_ENDPOINTS.CATEGORIES.CREATE, {
             method: 'POST', headers: getHeaders(), body: JSON.stringify(data)
+        });
+        return handleResponse(res);
+    },
+    updateCategory: async (id, data) => {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES.UPDATE(id), {
+            method: 'PUT', headers: getHeaders(), body: JSON.stringify(data)
         });
         return handleResponse(res);
     },

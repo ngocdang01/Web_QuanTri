@@ -7,6 +7,8 @@ const AdminCategories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [newCategory, setNewCategory] = useState({
     name: "",
     code: "",
@@ -71,6 +73,53 @@ const AdminCategories = () => {
         "Không thể thêm danh mục: " + (err.message || "Lỗi không xác định")
       );
       console.error("Error adding category:", err);
+    }
+  };
+  // Handle edit button click
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+    setNewCategory({
+      name: category.name || "",
+      code: category.code || "",
+      image: category.image || "",
+    });
+    setShowEditForm(true);
+  };
+  // Handle update submit
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!newCategory.name.trim()) {
+      alert("Vui lòng nhập tên danh mục!");
+      return;
+    }
+    if (!newCategory.code.trim()) {
+      alert("Vui lòng nhập mã danh mục!");
+      return;
+    }
+    if (!newCategory.image.trim()) {
+      alert("Vui lòng nhập link hình ảnh danh mục!");
+      return;
+    }
+    try {
+      await categoryAPI.updateCategory(editingCategory._id, newCategory);
+
+      // ✅ Gọi lại API để load lại danh sách danh mục
+      await fetchCategories();
+
+      setShowEditForm(false);
+      setEditingCategory(null);
+      setNewCategory({
+        name: "",
+        code: "",
+        type: "club",
+        image: "",
+      });
+      alert("Cập nhật danh mục thành công!");
+    } catch (err) {
+      alert(
+        "Không thể cập nhật danh mục: " + (err.message || "Lỗi không xác định")
+      );
+      console.error("Error updating category:", err);
     }
   };
   const formatDate = (dateString) => {
@@ -166,6 +215,60 @@ const AdminCategories = () => {
           </form>
         </div>
       )}
+
+      {showEditForm && (
+        <div className="add-product-form">
+          <div
+            className="form-overlay"
+            onClick={() => setShowEditForm(false)}
+          ></div>
+          <form onSubmit={handleUpdate} className="form-content">
+            <h3>Sửa danh mục</h3>
+            <div className="form-group">
+              <label>Tên danh mục:</label>
+              <input
+                type="text"
+                name="name"
+                value={newCategory.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Mã danh mục:</label>
+              <input
+                type="text"
+                name="code"
+                value={newCategory.code}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Link hình ảnh:</label>
+              <input
+                type="url"
+                name="image"
+                value={newCategory.image}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-buttons">
+              <button type="submit" className="btn btn-submit">
+                Cập nhật
+              </button>
+              <button
+                type="button"
+                className="btn btn-cancel"
+                onClick={() => setShowEditForm(false)}
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
       <div className="table-responsive">
         <table className="product-table">
           <thead>
@@ -211,7 +314,10 @@ const AdminCategories = () => {
                   >
                       <button 
                         className="btn btn-edit"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEdit(category);
+                        }}
                       >
                         Sửa
                       </button>
