@@ -7,6 +7,8 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
@@ -39,7 +41,7 @@ const Product = () => {
   // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewProduct(prev => ({
+    setNewProduct((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -47,7 +49,7 @@ const Product = () => {
 
   // Handle images change
   const handleImagesChange = (index, value) => {
-    setNewProduct(prev => {
+    setNewProduct((prev) => {
       const newImages = [...prev.images];
       newImages[index] = value;
       return {
@@ -77,7 +79,7 @@ const Product = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     //Validate
-    if (!newProduct.name.trim()){
+    if (!newProduct.name.trim()) {
       alert("Vui lòng nhập tên sản phẩm!");
       return;
     }
@@ -88,27 +90,32 @@ const Product = () => {
       alert("Vui lòng nhập ít nhất một link hình ảnh!");
       return;
     }
-    if ( newProduct.size_items.length === 0) {
+    if (newProduct.size_items.length === 0) {
       alert("Vui lòng chọn ít nhất một size!");
       return;
     }
-    if (!newProduct.description.trim()){
+    if (!newProduct.description.trim()) {
       alert("Vui lòng nhập mô tả sản phẩm!");
       return;
     }
     try {
       // Filter out empty image URLs
-      const filteredImages = newProduct.images.filter(img => img.trim() !== '');
-      
-      newProduct.stock = newProduct.size_items.reduce((acc, item) => acc + item.quantity, 0);
+      const filteredImages = newProduct.images.filter(
+        (img) => img.trim() !== ""
+      );
+
+      newProduct.stock = newProduct.size_items.reduce(
+        (acc, item) => acc + item.quantity,
+        0
+      );
       // Chuyển đổi price và stock thành số
       const productData = {
         ...newProduct,
         price: Number(newProduct.price),
         sold: Number(newProduct.sold || 0),
-        images: filteredImages
+        images: filteredImages,
       };
-      
+
       await productAPI.createProduct(productData);
       fetchProducts();
       setShowAddForm(false);
@@ -131,6 +138,89 @@ const Product = () => {
     }
   };
 
+  // Handle edit button click
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name || "",
+      price: product.price || "",
+      stock: product.stock || 0,
+      sold: product.sold || "",
+      description: product.description || "",
+      images:
+        product.images && product.images.length > 0 ? product.images : [""],
+      size_items: product.size_items || [],
+      categoryCode: product.categoryCode || "",
+    });
+    setShowEditForm(true);
+  };
+
+  // Handle update submit
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!newProduct.name.trim()) {
+      alert("Vui lòng nhập tên sản phẩm!");
+      return;
+    }
+    if (
+      newProduct.images.length === 0 ||
+      newProduct.images.every((img) => !img.trim())
+    ) {
+      alert("Vui lòng nhập ít nhất một link hình ảnh!");
+      return;
+    }
+    if (newProduct.size_items.length === 0) {
+      alert("Vui lòng chọn ít nhất một size!");
+      return;
+    }
+    if (!newProduct.description.trim()) {
+      alert("Vui lòng nhập mô tả sản phẩm!");
+      return;
+    }
+    try {
+      // Filter out empty image URLs
+      const filteredImages = newProduct.images.filter(
+        (img) => img.trim() !== ""
+      );
+
+      newProduct.stock = newProduct.size_items.reduce(
+        (acc, item) => acc + item.quantity,
+        0
+      );
+
+      const productData = {
+        ...newProduct,
+        price: Number(newProduct.price),
+        sold: Number(newProduct.sold || 0),
+        images: filteredImages,
+      };
+
+      await productAPI.updateProduct(editingProduct._id, productData);
+
+      // ✅ Gọi lại API để load lại danh sách sản phẩm
+      await fetchProducts();
+
+      setShowEditForm(false);
+      setEditingProduct(null);
+      setNewProduct({
+        name: "",
+        price: "",
+        stock: 0,
+        sold: "",
+        description: "",
+        images: [""],
+        size_items: [],
+        categoryCode: "",
+      });
+      alert("Cập nhật sản phẩm thành công!");
+    } catch (err) {
+      alert(
+        "Không thể cập nhật sản phẩm: " + (err.message || "Lỗi không xác định")
+      );
+      console.error("Error updating product:", err);
+    }
+  };
+
   const handleSizeToggle = (size, checked) => {
     setNewProduct((prev) => {
       let updated = [...prev.size_items];
@@ -146,13 +236,13 @@ const Product = () => {
   };
 
   const handleSizeQuantityChange = (size, quantity) => {
-  setNewProduct((prev) => ({
-    ...prev,
-    size_items: prev.size_items.map((s) =>
-      s.size === size ? { ...s, quantity } : s
-    )
-  }));
-};
+    setNewProduct((prev) => ({
+      ...prev,
+      size_items: prev.size_items.map((s) =>
+        s.size === size ? { ...s, quantity } : s
+      ),
+    }));
+  };
 
   // Delete product
   const handleDelete = async (id) => {
@@ -179,6 +269,7 @@ const Product = () => {
           Thêm
         </button>
       </div>
+      {/* Modal Thêm sản phẩm */}
       {showAddForm && (
         <div className="add-product-form">
           <div
@@ -238,10 +329,11 @@ const Product = () => {
                   )}
                 </div>
               ))}
-              <button 
+              <button
                 type="button"
                 className="btn btn-add-image"
-                onClick={addImageField}>
+                onClick={addImageField}
+              >
                 + Thêm hình ảnh
               </button>
             </div>
@@ -259,7 +351,9 @@ const Product = () => {
               <label>Size và số lượng:</label>
               <div className="size-list">
                 {["S", "M", "L", "XL"].map((size) => {
-                  const selected = newProduct.size_items.find((s) => s.size === size);
+                  const selected = newProduct.size_items.find(
+                    (s) => s.size === size
+                  );
                   return (
                     <div key={size} className="size-item">
                       <label className="size-checkbox">
@@ -267,7 +361,9 @@ const Product = () => {
                           type="checkbox"
                           value={size}
                           checked={!!selected}
-                          onChange={(e) => handleSizeToggle(size, e.target.checked)}
+                          onChange={(e) =>
+                            handleSizeToggle(size, e.target.checked)
+                          }
                         />
                         <span>{size}</span>
                       </label>
@@ -277,8 +373,11 @@ const Product = () => {
                           className="quantity-input"
                           value={selected.quantity}
                           min={0}
-                          onChange={(e) => 
-                            handleSizeQuantityChange(size, Number(e.target.value))
+                          onChange={(e) =>
+                            handleSizeQuantityChange(
+                              size,
+                              Number(e.target.value)
+                            )
                           }
                           placeholder="Số lượng"
                           required
@@ -297,6 +396,152 @@ const Product = () => {
                 type="button"
                 className="btn btn-cancel"
                 onClick={() => setShowAddForm(false)}
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal cập nhật sản phẩm */}
+      {showEditForm && (
+        <div className="add-product-form">
+          <div
+            className="form-overlay"
+            onClick={() => setShowEditForm(false)}
+          ></div>
+          <form onSubmit={handleUpdate} className="form-content">
+            <h3>Sửa sản phẩm</h3>
+            <div className="form-group">
+              <label>Tên sản phẩm:</label>
+              <input
+                type="text"
+                name="name"
+                value={newProduct.name}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Giá:</label>
+              <input
+                type="number"
+                name="price"
+                value={newProduct.price}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Số lượng:</label>
+              <input
+                type="number"
+                name="stock"
+                value={newProduct.stock}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Mô tả:</label>
+              <textarea
+                name="description"
+                value={newProduct.description}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Link hình ảnh:</label>
+              {newProduct.images.map((image, index) => (
+                <div key={index} className="image-input-group">
+                  <input
+                    type="url"
+                    value={image}
+                    onChange={(e) => handleImagesChange(index, e.target.value)}
+                    placeholder={`Link hình ảnh ${index + 1}`}
+                    required={index === 0}
+                  />
+                  {newProduct.images.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-remove"
+                      onClick={() => removeImageField(index)}
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                className="btn btn-add-image btn-action"
+                onClick={addImageField}
+              >
+                + Thêm hình ảnh
+              </button>
+            </div>
+            <div className="form-group">
+              <label>Mã danh mục:</label>
+              <input
+                type="text"
+                name="categoryCode"
+                value={newProduct.categoryCode}
+                onChange={handleInputChange}
+                placeholder="VD: chelsea, japan, vietnam, etc."
+              />
+            </div>
+            <div className="form-group">
+              <label>Size và số lượng:</label>
+              <div className="size-list">
+                {["S", "M", "L", "XL"].map((size) => {
+                  const selected = newProduct.size_items.find(
+                    (s) => s.size === size
+                  );
+                  return (
+                    <div key={size} className="size-item">
+                      <label className="size-checkbox">
+                        <input
+                          type="checkbox"
+                          value={size}
+                          checked={!!selected}
+                          onChange={(e) =>
+                            handleSizeToggle(size, e.target.checked)
+                          }
+                        />
+                        <span>{size}</span>
+                      </label>
+
+                      {selected && (
+                        <input
+                          type="number"
+                          className="quantity-input"
+                          value={selected.quantity}
+                          min={0}
+                          onChange={(e) =>
+                            handleSizeQuantityChange(
+                              size,
+                              Number(e.target.value)
+                            )
+                          }
+                          placeholder="Số lượng"
+                          required
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="form-buttons">
+              <button type="submit" className="btn btn-submit">
+                Cập nhật
+              </button>
+              <button
+                type="button"
+                className="btn btn-cancel"
+                onClick={() => setShowEditForm(false)}
               >
                 Hủy
               </button>
@@ -353,18 +598,21 @@ const Product = () => {
                 <td>{product.categoryCode || "N/A"}</td>
                 <td>
                   {product.sizes && product.sizes.length > 0
-                    ? product.sizes.map(s => `${s.size} (${s.quantity})`).join(",")
+                    ? product.sizes
+                        .map((s) => `${s.size} (${s.quantity})`)
+                        .join(",")
                     : "N/A"}
                 </td>
                 <td>
-                  <div 
-                  className="action-buttons"
-                  onClick={(e) => e.stopPropagation()}
+                  <div
+                    className="action-buttons"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <button
                       className="btn btn-edit"
-                      onClick={() => {
-                        /* TODO: Implement edit */
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(product);
                       }}
                     >
                       Sửa
@@ -372,7 +620,7 @@ const Product = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(product._id)
+                        handleDelete(product._id);
                       }}
                       className="btn btn-delete"
                     >
