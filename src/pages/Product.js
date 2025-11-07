@@ -19,6 +19,10 @@ const Product = () => {
     size_items: [],
     categoryCode: "",
   });
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [errorDetail, setErrorDetail] = useState(null);
   // Fetch products on component mount
   useEffect(() => {
     fetchProducts();
@@ -138,6 +142,24 @@ const Product = () => {
     }
   };
 
+  // Xem chi tiết sản phẩm
+  const handleShowDetail = async (id) => {
+
+    setShowDetail(true);
+    setLoadingDetail(true);
+    setErrorDetail(null);
+    try {
+      const res = await productAPI.getProductById(id);
+      
+      setSelectedProduct(res.data || res);
+    } catch (err) {
+      setErrorDetail("Không thể tải chi tiết sản phẩm");
+      setSelectedProduct(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   // Handle edit button click
   const handleEdit = (product) => {
     setEditingProduct(product);
@@ -226,7 +248,7 @@ const Product = () => {
       let updated = [...prev.size_items];
 
       if (checked) {
-        updated.push({ size, quantity: 0 });
+        updated.push({ size, quantity: "" });
       } else {
         updated = updated.filter((s) => s.size !== size);
       }
@@ -242,6 +264,23 @@ const Product = () => {
         s.size === size ? { ...s, quantity } : s
       ),
     }));
+  };
+
+  // Format date function
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "N/A";
+    }
   };
 
   // Delete product
@@ -550,6 +589,105 @@ const Product = () => {
         </div>
       )}
 
+      {/* Modal chi tiết sản phẩm */}
+      {showDetail && (
+        <div className="add-product-form">
+          <div
+            className="form-overlay"
+            onClick={() => setShowDetail(false)}
+          ></div>
+          <div className="form-content">
+            {loadingDetail ? (
+              <div className="loading">Đang tải chi tiết...</div>
+            ) : errorDetail ? (
+              <div className="error">{errorDetail}</div>
+            ) : selectedProduct ? (
+              <>
+                <h3>Chi tiết sản phẩm</h3>
+                <div className="product-images">
+                  {selectedProduct.images &&
+                  selectedProduct.images.length > 0 ? (
+                    selectedProduct.images.map((image, index) => (
+                      <img
+                        key={index}
+                        src={
+                          image ||
+                          "https://via.placeholder.com/120x120?text=No+Image"
+                        }
+                        alt={`${selectedProduct.name || "Product"} ${
+                          index + 1
+                        }`}
+                        style={{
+                          width: 120,
+                          height: 120,
+                          objectFit: "contain",
+                          borderRadius: 8,
+                          margin: "0.5rem",
+                          background: "#fff",
+                          border: "1px solid #ddd",
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <img
+                      src="https://via.placeholder.com/120x120?text=No+Image"
+                      alt="No product available"
+                      style={{
+                        width: 120,
+                        height: 120,
+                        objectFit: "contain",
+                        borderRadius: 8,
+                        margin: "0 auto 1rem",
+                        background: "#fff",
+                        display: "block",
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  )}
+                </div>
+                <p>
+                  <b>Tên:</b> {selectedProduct.name || "Không có tên"}
+                </p>
+                <p>
+                  <b>Giá:</b>{" "}
+                  {typeof selectedProduct.price === "number"
+                    ? selectedProduct.price.toLocaleString("vi-VN") + " VNĐ"
+                    : "N/A"}
+                </p>
+                <p>
+                  <b>Tồn kho:</b> {selectedProduct.stock ?? "N/A"}
+                </p>
+                <p>
+                  <b>Đã bán:</b> {selectedProduct.sold ?? "0"}
+                </p>
+                <p>
+                  <b>Mã danh mục:</b> {selectedProduct.categoryCode || "N/A"}
+                </p>
+                <p>
+                  <b>Size có sẵn:</b>{" "}
+                  {selectedProduct.sizes && selectedProduct.sizes.length > 0
+                    ? selectedProduct.sizes.map(s => `${s.size} (${s.quantity})`).join(", ")
+                    : "N/A"}
+                </p>
+                <p>
+                  <b>Mô tả:</b>{" "}
+                  {selectedProduct.description || "Không có mô tả"}
+                </p>
+                <p>
+                  <b>Ngày cập nhật:</b> {formatDate(selectedProduct.updatedAt)}
+                </p>
+                <button
+                  className="btn btn-cancel"
+                  onClick={() => setShowDetail(false)}
+                >
+                  Đóng
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       <div className="table-responsive">
         <table className="product-table">
           <thead>
@@ -568,8 +706,16 @@ const Product = () => {
           <tbody>
             {/* Reload */}
             {products.map((product) => (
-              <tr key={product._id}>
-                <td>{product._id}</td>
+              <tr 
+                key={product._id}
+                onClick={() => handleShowDetail(product._id)}
+                style={{ cursor: "pointer"}}
+              >
+                <td>
+                  {product._id
+                  ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
+                  : ""}
+                </td>
                 <td>{product.name ? product.name : "Không có tên"}</td>
                 <td>
                   {typeof product.price === "number" && !isNaN(product.price)

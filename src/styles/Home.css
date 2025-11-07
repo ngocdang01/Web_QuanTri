@@ -124,7 +124,8 @@ tr:hover {
 
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -132,7 +133,8 @@ tr:hover {
   background: linear-gradient(to bottom, var(--color-secondary), var(--color-primary));
   color: var(--color-surface);
   padding: 2rem 1rem;
-  min-height: 100vh;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 .sidebar h3 {
@@ -162,7 +164,8 @@ tr:hover {
   flex: 1;
   padding: 2rem;
   background: #fff;
-  min-height: 100vh;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 .user-table {
