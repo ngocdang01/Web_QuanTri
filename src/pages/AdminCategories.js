@@ -15,10 +15,17 @@ const AdminCategories = () => {
     image: "",
   });
 
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [errorDetail, setErrorDetail] = useState(null);
+
+  // Fetch categories on component mount
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  // Fetch all categories
   const fetchCategories = async () => {
     try {
       setLoading(true);
@@ -32,6 +39,7 @@ const AdminCategories = () => {
       setLoading(false);
     }
   };
+
   // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -40,6 +48,7 @@ const AdminCategories = () => {
       [name]: value,
     }));
   };
+
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,6 +84,23 @@ const AdminCategories = () => {
       console.error("Error adding category:", err);
     }
   };
+
+  // Xem chi tiết danh mục
+  const handleShowDetail = async (id) => {
+    setShowDetail(true);
+    setLoadingDetail(true);
+    setErrorDetail(null);
+    try {
+      const res = await categoryAPI.getCategoryById(id);
+      setSelectedCategory(res.data || res);
+    } catch (err) {
+      setErrorDetail("Không xem được chi tiết danh mục");
+      setSelectedCategory(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   // Handle edit button click
   const handleEdit = (category) => {
     setEditingCategory(category);
@@ -85,6 +111,7 @@ const AdminCategories = () => {
     });
     setShowEditForm(true);
   };
+
   // Handle update submit
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -122,6 +149,7 @@ const AdminCategories = () => {
       console.error("Error updating category:", err);
     }
   };
+  // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     try {
@@ -150,6 +178,7 @@ const AdminCategories = () => {
       }
     }
   };
+
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div>{error}</div>;
 
@@ -269,6 +298,64 @@ const AdminCategories = () => {
           </form>
         </div>
       )}
+
+      {/* Modal chi tiết danh mục */}
+      {showDetail && (
+        <div className="add-product-form">
+          <div
+            className="form-overlay"
+            onClick={() => setShowDetail(false)}
+          ></div>
+          <div className="form-content">
+            {loadingDetail ? (
+              <div className="loading">Đang tải chi tiết...</div>
+            ) : errorDetail ? (
+              <div className="error">{errorDetail}</div>
+            ) : selectedCategory ? (
+              <>
+                <h3>Chi tiết danh mục</h3>
+                <div className="product-images">
+                  <img
+                    src={
+                      selectedCategory.image ||
+                      "https://via.placeholder.com/120x120?text=No+Image"
+                    }
+                    alt={`${selectedCategory.name || "Category"}`}
+                    style={{
+                      width: 100,
+                      height: 100,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                      margin: "0.5rem",
+                      background: "#fff",
+                      border: "1px solid #ddd",
+                    }}
+                  />
+                </div>
+                <p>
+                  <b>Tên:</b> {selectedCategory.name || "Không có tên"}
+                </p>
+                <p>
+                  <b>Mã:</b> {selectedCategory.code || "N/A"}
+                </p>
+                <p>
+                  <b>Ngày tạo:</b> {formatDate(selectedCategory.createdAt)}
+                </p>
+                <p>
+                  <b>Ngày cập nhật:</b> {formatDate(selectedCategory.updatedAt)}
+                </p>
+                <button
+                  className="btn btn-cancel"
+                  onClick={() => setShowDetail(false)}
+                >
+                  Đóng
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       <div className="table-responsive">
         <table className="product-table">
           <thead>
@@ -285,7 +372,10 @@ const AdminCategories = () => {
 
           <tbody>
             {categories.map((category) => (
-              <tr key={category._id}>
+              <tr key={category._id}
+                onClick={() => handleShowDetail(category._id)}
+                style={{ cursor: "pointer"}}
+              >
                 <td>
                   {category._id
                     ? `${category._id.slice(0, 1)}...${category._id.slice(-4)}`

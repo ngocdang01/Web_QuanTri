@@ -5,6 +5,7 @@ const API_BASE_URL = 'http://localhost:3002/api';
 export const API_ENDPOINTS = {
     CATEGORIES: {
         LIST: `${API_BASE_URL}/categories`,
+        DETAIL: (id) => `${API_BASE_URL}/categories/${id}`,
         CREATE: `${API_BASE_URL}/categories/add`,
         UPDATE: (id) => `${API_BASE_URL}/categories/${id}`,
         DELETE: (id) => `${API_BASE_URL}/categories/${id}`,
@@ -26,9 +27,9 @@ export const getHeaders = (token = null) => {
         'Accept': 'application/json',
     };
 
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
+    // If token is provided, add Authorization header
+    const authToken = token || localStorage.getItem('token');
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
     return headers;
 };
@@ -39,12 +40,20 @@ export const handleResponse = async (response) => {
         const error = await response.json();
         throw new Error(error.message || 'Something went wrong');
     }
-    return response.json();
+    const result = await response.json();
+    return result?.data ?? result;
 };
+
 // === CATEGORIES ===
 export const categoryAPI = {
     getAllCategories: async () => {
         const res = await fetch(API_ENDPOINTS.CATEGORIES.LIST, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    getCategoryById: async (id) => {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES.DETAIL(id), {
             headers: getHeaders()
         });
         return handleResponse(res);
