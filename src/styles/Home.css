@@ -16,7 +16,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--color-surface);
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -35,20 +35,20 @@
 }
 
 .stat-info h3 {
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   margin: 0;
 }
 
 .stat-info p {
-  color: #333;
+  color: var(--color-text);
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0.5rem 0 0;
 }
 
 .recent-orders {
-  background: white;
+  background: var(--color-surface);
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -124,8 +124,7 @@ tr:hover {
 
 .admin-layout {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 .sidebar {
@@ -133,8 +132,7 @@ tr:hover {
   background: linear-gradient(to bottom, var(--color-secondary), var(--color-primary));
   color: var(--color-surface);
   padding: 2rem 1rem;
-  overflow-y: auto;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 .sidebar h3 {
@@ -163,9 +161,8 @@ tr:hover {
 .main-content {
   flex: 1;
   padding: 2rem;
-  background: #fff;
-  overflow-y: auto;
-  height: 100vh;
+  background: var(--color-surface);
+  min-height: 100vh;
 }
 
 .user-table {
@@ -173,9 +170,9 @@ tr:hover {
   border-collapse: separate;
   border-spacing: 0;
   background: var(--color-surface);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
   margin-top: 2rem;
   font-family: 'Segoe UI', Arial, sans-serif;
 }
@@ -190,7 +187,7 @@ tr:hover {
 .user-table th {
   background: #0b1220;
   color: var(--color-text);
-  font-weight: 00;
+  font-weight: 700;
   letter-spacing: 0.5px;
 }
 
@@ -229,23 +226,65 @@ tr:hover {
 }
 
 .btn-edit {
-  background-color: #b2dfff;
-  color: #1565c0;
+  background-color: var(--color-primary) !important;    /* Teal-700 */
+  color: #fff !important;
+  border: none;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .btn-edit:hover {
-  background-color: #bbdefb;
+  background-color: var(--color-primary-600) !important; /* Teal-600 */
   transform: translateY(-1px);
+  color: #fff !important;
 }
 
 .btn-delete {
-  background-color: #ffa2b0;
-  color: #c62828;
+  background-color: var(--color-danger) !important;      /* Red-500 */
+  color: #fff !important;
+  border: none;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
+
 .btn-delete:hover {
-  background-color: #ffcdd2;
+  background-color: #dc2626 !important; /* Red-600 */
   transform: translateY(-1px);
+  color: #fff !important;
 }
+
+.btn-pagination {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background-color: rgba(15, 118, 110, 0.08); /* nhẹ theo màu primary */
+}
+
+.btn-pagination.active {
+  background-color: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn, .btn-pagination {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.btn:hover, .btn-pagination:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 .product-image {
   width: 30px;
   height: 39px;

@@ -23,6 +23,9 @@ const Product = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [errorDetail, setErrorDetail] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(5);
+
   // Fetch products on component mount
   useEffect(() => {
     fetchProducts();
@@ -150,7 +153,7 @@ const Product = () => {
     setErrorDetail(null);
     try {
       const res = await productAPI.getProductById(id);
-      
+
       setSelectedProduct(res.data || res);
     } catch (err) {
       setErrorDetail("Không thể tải chi tiết sản phẩm");
@@ -297,6 +300,19 @@ const Product = () => {
     }
   };
 
+  // Add pagination calculations
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = products.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
+  const totalPages = Math.ceil(products.length / productsPerPage);
+
+  // Add pagination handlers
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
   if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -705,16 +721,16 @@ const Product = () => {
           </thead>
           <tbody>
             {/* Reload */}
-            {products.map((product) => (
-              <tr 
+            {currentProducts.map((product) => (
+              <tr
                 key={product._id}
                 onClick={() => handleShowDetail(product._id)}
                 style={{ cursor: "pointer"}}
               >
                 <td>
                   {product._id
-                  ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
-                  : ""}
+                    ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
+                    : ""}
                 </td>
                 <td>{product.name ? product.name : "Không có tên"}</td>
                 <td>
@@ -778,6 +794,37 @@ const Product = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Add pagination controls */}
+      <div className="pagination-wrapper">
+        <div className="pagination">
+          <button
+            className="btn btn-pagination"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Trước
+          </button>
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index + 1}
+              className={`btn btn-pagination ${
+                currentPage === index + 1 ? "active" : ""
+              }`}
+              onClick={() => handlePageChange(index + 1)}
+            >
+              {index + 1}
+            </button>
+          ))}
+          <button
+            className="btn btn-pagination"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Sau
+          </button>
+        </div>
       </div>
     </div>
   );
