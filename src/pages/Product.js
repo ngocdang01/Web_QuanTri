@@ -19,6 +19,20 @@ const Product = () => {
     size_items: [],
     categoryCode: "",
   });
+
+  const handleOpenAddForm = () => {
+    setNewProduct({
+      name: "",
+      price: "",
+      stock: "",
+      description: "",
+      images: [""],
+      categoryCode: "",
+      size_items: [],
+    });
+    setShowAddForm(true);
+  };
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -320,7 +334,7 @@ const Product = () => {
     <div className="product-container">
       <div className="product-header">
         <h2>Quản lý sản phẩm</h2>
-        <button className="btn btn-add" onClick={() => setShowAddForm(true)}>
+        <button className="btn btn-add" onClick={handleOpenAddForm}>
           Thêm
         </button>
       </div>

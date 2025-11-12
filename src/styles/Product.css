@@ -36,15 +36,6 @@
     font-size: 1rem;
 }
 
-.product-table th,
-.product-table td {
-  border-right: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.product-table th:last-child,
-.product-table td:last-child {
-  border-right: none;
-}
 .product-table th {
     background: #f4f6fb;
     color: #22223b;
@@ -63,10 +54,9 @@
 .product-table tbody tr:hover {
     background: #f7faff;
 }
-
 .product-image {
   position: relative;
-  width: 50px !important;              
+  width: 50px !important;              /* ✅ to rõ ràng */
   height: 50px !important;             /* ✅ bằng width để không méo */
   border-radius: 50% !important;       /* ✅ tròn hoàn hảo */
   overflow: hidden;
@@ -415,6 +405,25 @@
     flex: 1;
 }
 
+.add-product-form .form-content .image-input-group .btn-remove {
+  all: unset; 
+  background: #ff4d4f !important;
+  color: #fff !important;
+  font-size: 0.85rem !important;
+  padding: 4px 10px !important;      
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  height: 34px !important;          
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
+  transition: background 0.2s ease !important;
+}
+.add-product-form .form-content .image-input-group .btn-remove:hover {
+  background: #d9363e !important;
+}
+
 .btn-remove {
     background: #ff4444;
     color: white;
@@ -472,8 +481,8 @@
 
 @media (max-width: 768px) {
     .image-input-group {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row !important;
+        align-items: center !important;
     }
     
     .btn-remove {
