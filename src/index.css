@@ -23,7 +23,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(180deg, var(--color-surface-2) 0%, var(--color-bg) 100%);
+  /* background: linear-gradient(180deg, var(--color-surface-2) 0%, var(--color-bg) 100%); */
+  background: red !important;
   color: var(--color-text);
 }
 
@@ -33,13 +34,84 @@ table th {
   background: var(--color-primary) !important;
 }
 
+.pagination {
+  display: flex;
+  justify-content: flex-end !important;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 20px 0;
+}
+
+.btn-pagination.active {
+  background: var(--color-primary) !important;
+  color: #fff;
+  border-color: var(--color-primary-600) !important;
+}
 
 .btn-action {
   background: linear-gradient(90deg, var(--color-secondary) 0%, var(--color-primary) 100%) !important;
 }
 
+.btn-edit {
+  color: white;
+}
+
+.btn-delete {
+  color: #c62828;
+}
+
+.product-image {
+  width: 30px;
+  height: 39px;
+}
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Links */
+a {
+  color: var(--color-primary);
+}
+a:hover {
+  color: var(--color-primary-600);
+}
+
+/* Ant Design quick theming */
+:where(.ant-btn-primary) {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+:where(.ant-btn-primary:hover, .ant-btn-primary:focus) {
+  background-color: var(--color-primary-600) !important;
+  border-color: var(--color-primary-600) !important;
+}
+
+:where(.ant-switch-checked) {
+  background-color: var(--color-primary) !important;
+}
+
+:where(.ant-menu-dark, .ant-layout-sider) {
+  background: var(--color-surface) !important;
+}
+
+:where(.ant-layout) {
+  background: var(--color-bg) !important;
+}
+
+:where(.ant-typography),
+:where(.ant-table),
+:where(.ant-form),
+:where(.ant-statistic) {
+  color: var(--color-text);
+}
+
+/* Cards / panels */
+.card,
+.panel,
+.box {
+  background: var(--color-surface);
+  color: var(--color-text);
 }

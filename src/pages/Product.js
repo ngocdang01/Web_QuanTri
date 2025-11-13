@@ -811,7 +811,6 @@ const Product = () => {
       </div>
 
       {/* Add pagination controls */}
-      <div className="pagination-wrapper">
         <div className="pagination">
           <button
             className="btn btn-pagination"
@@ -839,7 +838,6 @@ const Product = () => {
             Sau
           </button>
         </div>
-      </div>
     </div>
   );
 };

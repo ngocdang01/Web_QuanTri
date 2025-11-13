@@ -5,7 +5,7 @@
 }
 
 .home-container h1 {
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 2rem;
 }
 .stats-grid {
@@ -209,6 +209,7 @@ tr:hover {
   justify-content: center;
   align-items: center;
 }
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -226,68 +227,28 @@ tr:hover {
 }
 
 .btn-edit {
-  background-color: var(--color-primary) !important;    /* Teal-700 */
-  color: #fff !important;
-  border: none;
-  transition: background 0.2s ease, transform 0.2s ease;
+  background-color: #b2dfff;
+  /* color: #1565c0; */
 }
 
 .btn-edit:hover {
-  background-color: var(--color-primary-600) !important; /* Teal-600 */
+  background-color: #bbdefb;
   transform: translateY(-1px);
-  color: #fff !important;
 }
 
 .btn-delete {
-  background-color: var(--color-danger) !important;      /* Red-500 */
-  color: #fff !important;
-  border: none;
-  transition: background 0.2s ease, transform 0.2s ease;
+  background-color: var(--color-danger);
+  /* color: #c62828; */
 }
 
 .btn-delete:hover {
-  background-color: #dc2626 !important; /* Red-600 */
+  background-color: #ffcdd2;
   transform: translateY(-1px);
-  color: #fff !important;
-}
-
-.btn-pagination {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  font-weight: 500;
-}
-
-.btn-pagination:hover:not(:disabled) {
-  background-color: rgba(15, 118, 110, 0.08); /* nhẹ theo màu primary */
-}
-
-.btn-pagination.active {
-  background-color: var(--color-primary) !important;
-  color: #fff !important;
-  border-color: var(--color-primary) !important;
-}
-
-.btn-pagination:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn, .btn-pagination {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.btn:hover, .btn-pagination:hover {
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .product-image {
-  width: 30px;
-  height: 39px;
+  /* width: 30px;
+  height: 39px; */
   object-fit: cover;
   border-radius: 50%;
   display: block;
