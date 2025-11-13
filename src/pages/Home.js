@@ -12,7 +12,7 @@ const Home = () => {
   return (
  <div className="admin-layout">
       <aside className="sidebar">
-        <h3>Quản trị</h3>
+        <h3>Quản trị viên</h3>
         <ul>
           <li className={tab==='dashboard' ? 'active' : ''} onClick={()=>setTab('dashboard')}>Thống kê</li>
           <li className={tab==='users' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý người dùng</li>
