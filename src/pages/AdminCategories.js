@@ -19,6 +19,8 @@ const AdminCategories = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [errorDetail, setErrorDetail] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [categoriesPerPage] = useState(5);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -49,6 +51,18 @@ const AdminCategories = () => {
     }));
   };
 
+  // Reset form khi bấm Thêm
+  const openAddForm = () => {
+    setNewCategory({
+      name: "",
+      code: "",
+      image: "",
+    });
+    setEditingCategory(null);
+    setShowAddForm(true);
+  };
+
+
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,7 +87,6 @@ const AdminCategories = () => {
       setNewCategory({
         name: "",
         code: "",
-        type: "club",
         image: "",
       });
       alert("Thêm danh mục thành công!");
@@ -138,7 +151,6 @@ const AdminCategories = () => {
       setNewCategory({
         name: "",
         code: "",
-        type: "club",
         image: "",
       });
       alert("Cập nhật danh mục thành công!");
@@ -179,6 +191,18 @@ const AdminCategories = () => {
     }
   };
 
+  // Add pagination calculations
+  const indexOfLastCategory = currentPage * categoriesPerPage;
+  const indexOfFirstCategory = indexOfLastCategory - categoriesPerPage;
+  const currentCategories = categories.slice( indexOfFirstCategory, indexOfLastCategory);
+  const totalPages = Math.ceil(categories.length / categoriesPerPage);
+
+  // Add pagination handlers
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div>{error}</div>;
 
@@ -186,7 +210,7 @@ const AdminCategories = () => {
     <div className="product-container">
       <div className="product-header">
         <h2>Quản lý danh mục</h2>
-        <button className="btn btn-add" onClick={() => setShowAddForm(true)}>
+        <button className="btn btn-add" onClick={openAddForm}>
           Thêm
         </button>
       </div>
@@ -426,6 +450,34 @@ const AdminCategories = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Add pagination controls */}
+      <div className="pagination">
+        <button
+          className="btn btn-pagination"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Trước
+        </button>
+        {[...Array(totalPages)].map((_, index) => (
+          <button
+            key={index + 1}
+            className={`btn btn-pagination ${currentPage === index + 1 ? "active" : ""
+              }`}
+            onClick={() => handlePageChange(index + 1)}
+          >
+            {index + 1}
+          </button>
+        ))}
+        <button
+          className="btn btn-pagination"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Sau
+        </button>
       </div>
     </div>
   );
