@@ -1,8 +1,21 @@
+import { data } from "react-router-dom";
+
 // API Configuration
 const API_BASE_URL = 'http://localhost:3002/api';
 
 // API Endpoints
 export const API_ENDPOINTS = {
+    AUTH: {
+        LOGIN: `${API_BASE_URL}/login`,
+        LOGOUT: `${API_BASE_URL}/logout`,
+        PROFILE: `${API_BASE_URL}/profile`,
+        CHANGE_PASSWORD: `${API_BASE_URL}/change-password`,
+        RESET_PASSWORD: `${API_BASE_URL}/reset-password`,
+    },
+    USERS: {
+        LIST: `${API_BASE_URL}/users`,
+        DELETE: (id) => `${API_BASE_URL}/users/${id}`,
+    },
     CATEGORIES: {
         LIST: `${API_BASE_URL}/categories`,
         DETAIL: (id) => `${API_BASE_URL}/categories/${id}`,
@@ -27,7 +40,7 @@ export const getHeaders = (token = null) => {
         'Accept': 'application/json',
     };
 
-    // If token is provided, add Authorization header
+    // If no token provided, try to get from localStorage
     const authToken = token || localStorage.getItem('token');
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
@@ -42,6 +55,62 @@ export const handleResponse = async (response) => {
     }
     const result = await response.json();
     return result?.data ?? result;
+};
+
+// === AUTH ===
+export const authAPI = {
+    login: async (credentials) => {
+        const res = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
+            method: 'POST', headers: getHeaders(), body: JSON.stringify(credentials)
+        });
+        return handleResponse(res);
+    },
+    logout: async () => {
+        const res = await fetch(API_ENDPOINTS.AUTH.LOGOUT, {
+            method: 'POST', headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    getProfile: async () => {
+        const res = await fetch(API_ENDPOINTS.AUTH.PROFILE, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    updateProfile: async (data) => {
+        const res = await fetch(API_ENDPOINTS.AUTH.PROFILE, {
+            method: 'PUT', headers: getHeaders(), body: JSON.stringify(data)
+        });
+        return handleResponse(res);
+    },
+    changePassword: async (data) => {
+        const res = await fetch(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, {
+            method: 'PUT', headers: getHeaders(), body: JSON.stringify(data)
+        });
+        return handleResponse(res);
+    },
+    resetPassword: async (email) => {
+        const res = await fetch(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+            method: 'POST', headers: getHeaders(), body: JSON.stringify({ email })
+        });
+        return handleResponse(res);
+    }
+};
+
+// === USERS ===
+export const userAPI = {
+    getAllUsers: async () => {
+        const res = await fetch(API_ENDPOINTS.USERS.LIST, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    deleteUser: async (id) => {
+        const res = await fetch(API_ENDPOINTS.USERS.DELETE(id), {
+            method: 'DELETE', headers: getHeaders()
+        });
+        return handleResponse(res);
+    }
 };
 
 // === CATEGORIES ===
@@ -77,51 +146,42 @@ export const categoryAPI = {
         return handleResponse(res);
     }
 };
-// Product API Services
+// === PRODUCT ===
 export const productAPI = {
-    // Get all products
     getAllProducts: async () => {
-        const response = await fetch(API_ENDPOINTS.PRODUCTS.LIST, {
+        const res = await fetch(API_ENDPOINTS.PRODUCTS.LIST, {
             headers: getHeaders()
         });
-        return handleResponse(response);
+        return handleResponse(res);
     },
-
-    // Get product by ID
     getProductById: async (id) => {
-        const response = await fetch(API_ENDPOINTS.PRODUCTS.DETAIL(id), {
+        const res = await fetch(API_ENDPOINTS.PRODUCTS.DETAIL(id), {
             headers: getHeaders()
         });
-        return handleResponse(response);
+        return handleResponse(res);
     },
-
-    // Create new product
-    createProduct: async (productData) => {
-        const response = await fetch(API_ENDPOINTS.PRODUCTS.CREATE, {
+    createProduct: async (data) => {
+        const res = await fetch(API_ENDPOINTS.PRODUCTS.CREATE, {
             method: 'POST',
             headers: getHeaders(),
-            body: JSON.stringify(productData)
+            body: JSON.stringify(data)
         });
-        return handleResponse(response);
+        return handleResponse(res);
     },
-
-    // Update product
-    updateProduct: async (id, productData) => {
-        const response = await fetch(API_ENDPOINTS.PRODUCTS.UPDATE(id), {
+    updateProduct: async (id, data) => {
+        const res = await fetch(API_ENDPOINTS.PRODUCTS.UPDATE(id), {
             method: 'PUT',
             headers: getHeaders(),
-            body: JSON.stringify(productData)
+            body: JSON.stringify(data)
         });
-        return handleResponse(response);
+        return handleResponse(res);
     },
-
-    // Delete product
     deleteProduct: async (id) => {
-        const response = await fetch(API_ENDPOINTS.PRODUCTS.DELETE(id), {
+        const res = await fetch(API_ENDPOINTS.PRODUCTS.DELETE(id), {
             method: 'DELETE',
             headers: getHeaders()
         });
-        return handleResponse(response);
+        return handleResponse(res);
     }
 };
 
@@ -130,6 +190,9 @@ const apiConfig = {
   API_ENDPOINTS,
   getHeaders,
   handleResponse,
+  authAPI,
+  userAPI,
+  categoryAPI,
   productAPI
 };
 
