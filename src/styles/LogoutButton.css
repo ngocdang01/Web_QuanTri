@@ -1,0 +1,84 @@
+.logout-btn-fixed {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 1100;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    background: var(--color-secondary);
+    border-radius: 50%;
+    padding: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: color 0.2s, background 0.2s;
+}
+.logout-btn-fixed:hover {
+    color: var(--color-danger);
+    background: var(--color-primary);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1200;
+}
+
+.dialog-content {
+    background-color: var(--color-surface);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.dialog-content h3 {
+    margin: 0 0 15px 0;
+    color: var(--color-text);
+}
+
+.dialog-content p {
+    margin: 0 0 20px 0;
+    color: var(--color-text-muted);
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.dialog-buttons button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-confirm {
+    background-color: var(--color-danger);
+    color: var(--color-text);
+}
+
+.btn-confirm:hover {
+    background-color: #dc2626;
+}
+
+.btn-cancel {
+    background-color: #334155;
+    color: var(--color-text);
+}
+
+.btn-cancel:hover {
+    background-color: #475569;
+}
