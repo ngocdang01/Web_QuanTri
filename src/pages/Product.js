@@ -96,9 +96,33 @@ const Product = () => {
     }));
   };
 
+  // Check trùng tên
+  const isDuplicateName = (name) => {
+    return products.some(
+      (p) => p.name.trim().toLowerCase() === name.trim().toLowerCase()
+    );
+  };
+  // Check trùng hình ảnh
+  const isDuplicateImage = (images) => {
+    return products.some((p) =>
+      p.images && images && p.images.some((img) => images.includes(img))
+    );
+  };
+
   // Hanle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isDuplicateName(newProduct.name)) {
+      alert("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác!");
+      return;
+    }
+
+    if (isDuplicateImage(newProduct.images)) {
+      alert("Hình ảnh sản phẩm đã tồn tại. Vui lòng thay đổi ảnh khác!");
+      return;
+    }
+
     //Validate
     if (!newProduct.name.trim()) {
       alert("Vui lòng nhập tên sản phẩm!");
