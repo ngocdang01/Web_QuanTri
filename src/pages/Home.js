@@ -3,6 +3,7 @@ import Dashboard from './Dashboard';
 import User from './User';
 import Product from './Product';
 import Order from './Order';
+import Banner from './Banner';
 import '../styles/Home.css';
 import AdminCategories from './AdminCategories';
 
@@ -18,6 +19,7 @@ const Home = () => {
           <li className={tab==='users' ? 'active' : ''} onClick={()=>setTab('users')}>Quản lý người dùng</li>
           <li className={tab==='categories' ? 'active' : ''} onClick={()=>setTab('categories')}>Quản lý danh mục</li>
           <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('products')}>Quản lý sản phẩm</li>
+          <li className={tab==='banner' ? 'active' : ''} onClick={()=>setTab('banner')}>Quản lý Banner</li>
         </ul>
       </aside>
       <main className="main-content">
@@ -26,6 +28,7 @@ const Home = () => {
         {tab === 'categories' && <AdminCategories />}
         {tab === 'products' && <Product />}
         {tab === 'orders' && <Order />}
+        {tab === 'banner' && <Banner />}
       </main>
     </div>
   );

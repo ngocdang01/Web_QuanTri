@@ -30,6 +30,13 @@ export const API_ENDPOINTS = {
         CREATE: `${API_BASE_URL}/products/add`,
         UPDATE: (id) => `${API_BASE_URL}/products/${id}`,
         DELETE: (id) => `${API_BASE_URL}/products/${id}`,
+    },
+    BANNERS: {
+        LIST: `${API_BASE_URL}/banners`,
+        DETAIL: (id) => `${API_BASE_URL}/banners/${id}`,
+        CREATE: `${API_BASE_URL}/banners/add`,
+        UPDATE: (id) => `${API_BASE_URL}/banners/${id}`,
+        DELETE: (id) => `${API_BASE_URL}/banners/${id}`
     }
 };
 
@@ -184,6 +191,39 @@ export const productAPI = {
         return handleResponse(res);
     }
 };
+// === BANNERS ===
+export const bannerAPI = {
+    getAllBanners: async () => {
+        const res = await fetch(`${API_BASE_URL}/banners`, { headers: getHeaders() });
+        return handleResponse(res);
+    },
+    getActiveBanners: async () => {
+        const res = await fetch(`${API_BASE_URL}/banners/active`, { headers: getHeaders() });
+        return handleResponse(res);
+    },
+    getBannerById: async (id) => {
+        const res = await fetch(`${API_BASE_URL}/banners/${id}`, { headers: getHeaders() });
+        return handleResponse(res);
+    },
+    createBanner: async (data) => {
+        const res = await fetch(`${API_BASE_URL}/banners`, {
+            method: 'POST', headers: getHeaders(), body: JSON.stringify(data)
+        });
+        return handleResponse(res);
+    },
+    updateBanner: async (id, data) => {
+        const res = await fetch(`${API_BASE_URL}/banners/${id}`, {
+            method: 'PUT', headers: getHeaders(), body: JSON.stringify(data)
+        });
+        return handleResponse(res);
+    },
+    deleteBanner: async (id) => {
+        const res = await fetch(`${API_BASE_URL}/banners/${id}`, {
+            method: 'DELETE', headers: getHeaders()
+        });
+        return handleResponse(res);
+    }
+};
 
 const apiConfig = {
   API_BASE_URL,
@@ -193,7 +233,8 @@ const apiConfig = {
   authAPI,
   userAPI,
   categoryAPI,
-  productAPI
+  productAPI,
+  bannerAPI
 };
 
 export default apiConfig;
