@@ -62,6 +62,36 @@ const AdminCategories = () => {
     setShowAddForm(true);
   };
 
+  // check trùng
+  const validateCreate = () => {
+    const name = newCategory.name.trim().toLowerCase();
+    const code = newCategory.code.trim().toLowerCase();
+    const image = newCategory.image.trim();
+
+    const duplicateName = categories.some(
+      (c) => c.name.trim().toLowerCase() === name
+    );
+    if (duplicateName) {
+      alert("Tên danh mục đã tồn tại!");
+      return false;
+    }
+    const duplicateCode = categories.some(
+      (c) => c.code.trim().toLowerCase() === code
+    );
+    if (duplicateCode) {
+      alert("Mã danh mục đã tồn tại!");
+      return false;
+    }
+    const duplicateImage = categories.some(
+      (c) => c.image.trim() === image
+    );
+    if (duplicateImage) {
+      alert("Hình ảnh danh mục đã tồn tại!");
+      return false;
+    }
+    return true;
+  };
+
 
   // Handle form submit
   const handleSubmit = async (e) => {
@@ -79,7 +109,7 @@ const AdminCategories = () => {
       alert("Vui lòng nhập link hình ảnh danh mục!");
       return;
     }
-
+    if (!validateCreate()) return;
     try {
       await categoryAPI.createCategory(newCategory);
       fetchCategories();
@@ -124,6 +154,41 @@ const AdminCategories = () => {
     });
     setShowEditForm(true);
   };
+  // check trùng update
+  const validateUpdate = () => {
+    const name = newCategory.name.trim().toLowerCase();
+    const code = newCategory.code.trim().toLowerCase();
+    const image = newCategory.image.trim();
+
+    const duplicateName = categories.some(
+      (c) =>
+        c._id !== editingCategory._id &&
+        c.name.trim().toLowerCase() === name
+    );
+    if (duplicateName) {
+      alert("Tên danh mục đã tồn tại!");
+      return false;
+    }
+    const duplicateCode = categories.some(
+      (c) =>
+        c._id !== editingCategory._id &&
+        c.code.trim().toLowerCase() === code
+    );
+    if (duplicateCode) {
+      alert("Mã danh mục đã tồn tại!");
+      return false;
+    }
+    const duplicateImage = categories.some(
+      (c) =>
+        c._id !== editingCategory._id &&
+        c.image.trim() === image
+    );
+    if (duplicateImage) {
+      alert("Hình ảnh danh mục đã tồn tại!");
+      return false;
+    }
+    return true;
+  };
 
   // Handle update submit
   const handleUpdate = async (e) => {
@@ -140,6 +205,7 @@ const AdminCategories = () => {
       alert("Vui lòng nhập link hình ảnh danh mục!");
       return;
     }
+    if (!validateUpdate()) return;
     try {
       await categoryAPI.updateCategory(editingCategory._id, newCategory);
 
