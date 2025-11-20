@@ -36,7 +36,8 @@ export const API_ENDPOINTS = {
         DETAIL: (id) => `${API_BASE_URL}/banners/${id}`,
         CREATE: `${API_BASE_URL}/banners/add`,
         UPDATE: (id) => `${API_BASE_URL}/banners/${id}`,
-        DELETE: (id) => `${API_BASE_URL}/banners/${id}`
+        DELETE: (id) => `${API_BASE_URL}/banners/${id}`,
+        TOGGLE_STATUS: (id) => `${API_BASE_URL}/banners/${id}/toggle`,
     }
 };
 
@@ -220,6 +221,12 @@ export const bannerAPI = {
     deleteBanner: async (id) => {
         const res = await fetch(`${API_BASE_URL}/banners/${id}`, {
             method: 'DELETE', headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    toggleBannerStatus: async (id) => {
+        const res = await fetch(`${API_BASE_URL}/banners/${id}/toggle`, {
+            method: 'PUT', headers: getHeaders()
         });
         return handleResponse(res);
     }
