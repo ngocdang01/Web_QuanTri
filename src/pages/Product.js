@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { productAPI } from "../config/api";
 import "../styles/Product.css";
 
 const Product = () => {
+  const fileInputRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -67,17 +68,51 @@ const Product = () => {
       [name]: value,
     }));
   };
-
-  // Handle images change
   const handleImagesChange = (index, value) => {
-    setNewProduct((prev) => {
-      const newImages = [...prev.images];
-      newImages[index] = value;
-      return {
-        ...prev,
-        images: newImages,
-      };
-    });
+    const clean = value.trim();
+
+    const clone = [...newProduct.images];
+    clone[index] = clean;
+
+    if (isDuplicateImage(clone, editingProduct?._id)) {
+      alert("Ảnh đã tồn tại!");
+      return;
+    }
+
+    setNewProduct((prev) => ({ ...prev, images: clone }));
+  };
+
+  const handleSelectImageFromPC = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const res = await fetch("http://localhost:3002/api/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.message || "Upload ảnh thất bại!");
+        return;
+      }
+      const uploadedUrl = data.url.trim();
+      setNewProduct((prev) => {
+        let imgs = prev.images.filter((img) => img.trim() !== "");
+
+        return {
+          ...prev,
+          images: [...imgs, uploadedUrl],
+        };
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi upload ảnh!");
+    }
+    e.target.value = null;
   };
 
   // Add new image field
@@ -102,23 +137,47 @@ const Product = () => {
       (p) => p.name.trim().toLowerCase() === name.trim().toLowerCase()
     );
   };
-  // Check trùng hình ảnh
-  const isDuplicateImage = (images) => {
-    return products.some((p) =>
-      p.images && images && p.images.some((img) => images.includes(img))
-    );
+
+  const getPublicId = (url) => {
+    try {
+      const regex = /upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/;
+      const match = url.match(regex);
+      return match ? match[1] : url;
+    } catch {
+      return url;
+    }
+  };
+
+  const isDuplicateImage = (images, editingId = null) => {
+    const publicIds = images.filter((i) => i.trim() !== "").map(getPublicId);
+
+    // kiểm tra trùng trong chính form
+    const set = new Set();
+    for (let id of publicIds) {
+      if (set.has(id)) return true;
+      set.add(id);
+    }
+
+    // kiểm tra trùng với sản phẩm khác
+    return products.some((p) => {
+      if (editingId && p._id === editingId) return false;
+      const existing = (p.images || []).map(getPublicId);
+      return existing.some((id) => publicIds.includes(id));
+    });
   };
 
   // Hanle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const filteredImages = newProduct.images.filter((img) => img.trim() !== "");
+
     if (isDuplicateName(newProduct.name)) {
       alert("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác!");
       return;
     }
 
-    if (isDuplicateImage(newProduct.images)) {
+    if (isDuplicateImage(filteredImages)) {
       alert("Hình ảnh sản phẩm đã tồn tại. Vui lòng thay đổi ảnh khác!");
       return;
     }
@@ -148,6 +207,10 @@ const Product = () => {
       const filteredImages = newProduct.images.filter(
         (img) => img.trim() !== ""
       );
+      if (isDuplicateImage(filteredImages)) {
+        alert("Ảnh đã tồn tại. Không thể thêm sản phẩm!");
+        return;
+      }
 
       newProduct.stock = newProduct.size_items.reduce(
         (acc, item) => acc + item.quantity,
@@ -185,7 +248,6 @@ const Product = () => {
 
   // Xem chi tiết sản phẩm
   const handleShowDetail = async (id) => {
-
     setShowDetail(true);
     setLoadingDetail(true);
     setErrorDetail(null);
@@ -240,17 +302,24 @@ const Product = () => {
       alert("Vui lòng nhập mô tả sản phẩm!");
       return;
     }
+    if (isDuplicateImage(newProduct.images, editingProduct._id)) {
+      alert("Ảnh đã tồn tại ở sản phẩm khác hoặc trùng trong chính sản phẩm!");
+      return;
+    }
+
     try {
       // Filter out empty image URLs
       const filteredImages = newProduct.images.filter(
         (img) => img.trim() !== ""
       );
-
+      if (isDuplicateImage(newProduct.images, editingProduct._id)) {
+        alert("Ảnh đã tồn tại ở sản phẩm khác!");
+        return;
+      }
       newProduct.stock = newProduct.size_items.reduce(
         (acc, item) => acc + item.quantity,
         0
       );
-
       const productData = {
         ...newProduct,
         price: Number(newProduct.price),
@@ -260,9 +329,7 @@ const Product = () => {
 
       await productAPI.updateProduct(editingProduct._id, productData);
 
-      // ✅ Gọi lại API để load lại danh sách sản phẩm
       await fetchProducts();
-
       setShowEditForm(false);
       setEditingProduct(null);
       setNewProduct({
@@ -401,15 +468,14 @@ const Product = () => {
               />
             </div>
             <div className="form-group">
-              <label>Link hình ảnh:</label>
+              <label>Hình ảnh:</label>
               {newProduct.images.map((image, index) => (
                 <div key={index} className="image-input-group">
                   <input
                     type="url"
                     value={image}
                     onChange={(e) => handleImagesChange(index, e.target.value)}
-                    placeholder={`Link hinh anh ${index + 1}`}
-                    required={index === 0}
+                    placeholder={`Link hình ảnh ${index + 1}`}
                   />
                   {newProduct.images.length > 1 && (
                     <button
@@ -422,14 +488,34 @@ const Product = () => {
                   )}
                 </div>
               ))}
+
+              <div style={{ marginTop: "10px" }}>
+                <button
+                  type="button"
+                  className="btn btn-add-image"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  📁 Chọn ảnh từ máy
+                </button>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => handleSelectImageFromPC(e)}
+                />
+              </div>
+
               <button
                 type="button"
                 className="btn btn-add-image"
                 onClick={addImageField}
               >
-                + Thêm hình ảnh
+                + Thêm link ảnh
               </button>
             </div>
+
             <div className="form-group">
               <label>Mã danh mục:</label>
               <input
@@ -546,7 +632,7 @@ const Product = () => {
               />
             </div>
             <div className="form-group">
-              <label>Link hình ảnh:</label>
+              <label>Hình ảnh:</label>
               {newProduct.images.map((image, index) => (
                 <div key={index} className="image-input-group">
                   <input
@@ -554,7 +640,6 @@ const Product = () => {
                     value={image}
                     onChange={(e) => handleImagesChange(index, e.target.value)}
                     placeholder={`Link hình ảnh ${index + 1}`}
-                    required={index === 0}
                   />
                   {newProduct.images.length > 1 && (
                     <button
@@ -567,6 +652,25 @@ const Product = () => {
                   )}
                 </div>
               ))}
+
+              <div style={{ marginTop: "10px" }}>
+                <button
+                  type="button"
+                  className="btn btn-add-image btn-action"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  📁 Chọn ảnh từ máy
+                </button>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => handleSelectImageFromPC(e)}
+                />
+              </div>
+
               <button
                 type="button"
                 className="btn btn-add-image btn-action"
@@ -720,7 +824,9 @@ const Product = () => {
                 <p>
                   <b>Size có sẵn:</b>{" "}
                   {selectedProduct.sizes && selectedProduct.sizes.length > 0
-                    ? selectedProduct.sizes.map(s => `${s.size} (${s.quantity})`).join(", ")
+                    ? selectedProduct.sizes
+                        .map((s) => `${s.size} (${s.quantity})`)
+                        .join(", ")
                     : "N/A"}
                 </p>
                 <p>
@@ -760,23 +866,27 @@ const Product = () => {
           <tbody>
             {/* Reload */}
             {currentProducts.map((product) => (
-              <tr
-                key={product._id}
-                onClick={() => handleShowDetail(product._id)}
-                style={{ cursor: "pointer"}}
-              >
+              <tr key={product._id} style={{ cursor: "default" }}>
                 <td>
                   {product._id
                     ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
                     : ""}
                 </td>
-                <td>{product.name ? product.name : "Không có tên"}</td>
+                <td
+                  onClick={() => handleShowDetail(product._id)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {product.name || "Không có tên"}
+                </td>
                 <td>
                   {typeof product.price === "number" && !isNaN(product.price)
                     ? product.price.toLocaleString("vi-VN") + " VNĐ"
                     : "N/A"}
                 </td>
-                <td>
+                <td
+                  onClick={() => handleShowDetail(product._id)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className="product-image">
                     <img
                       src={
@@ -784,7 +894,7 @@ const Product = () => {
                           ? product.images[0]
                           : "https://via.placeholder.com/60x60?text=No+Image"
                       }
-                      alt={product.name ? product.name : "No name"}
+                      alt={product.name || "No name"}
                     />
                     {product.images && product.images.length > 1 && (
                       <span className="image-count">
@@ -804,10 +914,7 @@ const Product = () => {
                     : "N/A"}
                 </td>
                 <td>
-                  <div
-                    className="action-buttons"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <div className="action-buttons">
                     <button
                       className="btn btn-edit"
                       onClick={(e) => {
@@ -818,11 +925,11 @@ const Product = () => {
                       Sửa
                     </button>
                     <button
+                      className="btn btn-delete"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(product._id);
                       }}
-                      className="btn btn-delete"
                     >
                       Xóa
                     </button>
@@ -835,33 +942,33 @@ const Product = () => {
       </div>
 
       {/* Add pagination controls */}
-        <div className="pagination">
+      <div className="pagination">
+        <button
+          className="btn btn-pagination"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Trước
+        </button>
+        {[...Array(totalPages)].map((_, index) => (
           <button
-            className="btn btn-pagination"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
+            key={index + 1}
+            className={`btn btn-pagination ${
+              currentPage === index + 1 ? "active" : ""
+            }`}
+            onClick={() => handlePageChange(index + 1)}
           >
-            Trước
+            {index + 1}
           </button>
-          {[...Array(totalPages)].map((_, index) => (
-            <button
-              key={index + 1}
-              className={`btn btn-pagination ${
-                currentPage === index + 1 ? "active" : ""
-              }`}
-              onClick={() => handlePageChange(index + 1)}
-            >
-              {index + 1}
-            </button>
-          ))}
-          <button
-            className="btn btn-pagination"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Sau
-          </button>
-        </div>
+        ))}
+        <button
+          className="btn btn-pagination"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Sau
+        </button>
+      </div>
     </div>
   );
 };
