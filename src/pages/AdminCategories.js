@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { categoryAPI } from "../config/api";
 import "../styles/Product.css";
 
 const AdminCategories = () => {
+  const fileInputRef = useRef(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,6 +93,40 @@ const AdminCategories = () => {
     return true;
   };
 
+  // Upload ảnh
+  const handleSelectImageFromPC = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  try {
+    const res = await fetch("http://localhost:3002/api/upload-image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert(data.message || "Upload ảnh thất bại!");
+      return;
+    }
+
+    const uploadedUrl = data.url.trim();
+
+    setNewCategory((prev) => ({
+      ...prev,
+      image: uploadedUrl,
+    }));
+  } catch (err) {
+    console.error("Upload error:", err);
+    alert("Lỗi upload ảnh!");
+  }
+
+  e.target.value = null;
+};
 
   // Handle form submit
   const handleSubmit = async (e) => {
@@ -310,13 +345,33 @@ const AdminCategories = () => {
               />
             </div>
             <div className="form-group">
-              <label>Link hình ảnh:</label>
+              <label>Hình ảnh:</label>
               <input
                 type="url"
                 name="image"
                 value={newCategory.image}
                 onChange={handleInputChange}
+                placeholder="Dán link hoặc chọn ảnh"
                 required
+              />
+
+              { /*  Nút chọn ảnh từ máy */}
+              <button
+                type="button"
+                className="btn btn-add-image"
+                onClick={() => fileInputRef.current.click()}
+                style={{ marginTop: "8px" }}
+              >
+                📁 Chọn ảnh từ máy
+              </button>
+
+              {/* Input file ẩn */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleSelectImageFromPC}
               />
             </div>
             <div className="form-buttons">
@@ -364,13 +419,30 @@ const AdminCategories = () => {
               />
             </div>
             <div className="form-group">
-              <label>Link hình ảnh:</label>
+              <label>Hình ảnh:</label>
               <input
                 type="url"
                 name="image"
                 value={newCategory.image}
                 onChange={handleInputChange}
                 required
+              />
+
+              <button
+                type="button"
+                className="btn btn-add-image"
+                onClick={() => fileInputRef.current.click()}
+                style={{ marginTop: "8px" }}
+              >
+                📁 Chọn ảnh từ máy
+              </button>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleSelectImageFromPC}
               />
             </div>
             <div className="form-buttons">
@@ -461,7 +533,7 @@ const AdminCategories = () => {
           </thead>
 
           <tbody>
-            {categories.map((category) => (
+            {currentCategories.map((category) => (
               <tr key={category._id}
                 onClick={() => handleShowDetail(category._id)}
                 style={{ cursor: "pointer"}}
