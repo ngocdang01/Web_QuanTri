@@ -31,6 +31,9 @@ export const API_ENDPOINTS = {
         UPDATE: (id) => `${API_BASE_URL}/products/${id}`,
         DELETE: (id) => `${API_BASE_URL}/products/${id}`,
     },
+    ORDERS: {
+        LIST: `${API_BASE_URL}/orders`
+    },
     BANNERS: {
         LIST: `${API_BASE_URL}/banners`,
         DETAIL: (id) => `${API_BASE_URL}/banners/${id}`,
@@ -192,6 +195,21 @@ export const productAPI = {
         return handleResponse(res);
     }
 };
+// === ORDERS ===
+export const orderAPI = {
+    getAllOrders: async () => {
+        const res = await fetch(API_ENDPOINTS.ORDERS.LIST, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    getOrderById: async (id) => {
+        const res = await fetch(API_ENDPOINTS.ORDERS.DETAIL(id), {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    }
+}
 // === BANNERS ===
 export const bannerAPI = {
     getAllBanners: async () => {
@@ -241,6 +259,7 @@ const apiConfig = {
   userAPI,
   categoryAPI,
   productAPI,
+  orderAPI,
   bannerAPI
 };
 
