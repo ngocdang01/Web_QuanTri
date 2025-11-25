@@ -8,7 +8,9 @@ const Order = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalOrder, setModalOrder] = useState(null); 
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage] = useState(6);
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -39,6 +41,17 @@ const Order = () => {
     }
   };
 
+  // Add pagination calculations
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+
+  // Add pagination handlers
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   if (loading) return <div className="loading">Đang tải...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -63,7 +76,7 @@ const Order = () => {
           </tr>
         </thead>
         <tbody>
-            { orders.map(order => {
+            { currentOrders.map(order => {
                const item = order.items?.[0] || {};
               return ( 
                 <tr key={order._id}>
@@ -88,6 +101,39 @@ const Order = () => {
             })}
         </tbody>
       </table>
+      <div className="pagination">
+          <div className="pagination">
+            <button
+              className="btn btn-pagination prev"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Trước
+            </button>
+
+            <div className="pagination-numbers">
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  key={index + 1}
+                  className={`btn btn-pagination ${currentPage === index + 1 ? 'active' : ''}`}
+                  onClick={() => handlePageChange(index + 1)}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              className="btn btn-pagination next"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Sau
+            </button>
+          </div>
+
+      </div>
+
       {/* Modal dialog for order detail */}
       {modalOrder && (
         <div className="order-modal-overlay" onClick={() => setModalOrder(null)}>
