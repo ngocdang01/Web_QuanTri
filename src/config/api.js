@@ -32,7 +32,8 @@ export const API_ENDPOINTS = {
         DELETE: (id) => `${API_BASE_URL}/products/${id}`,
     },
     ORDERS: {
-        LIST: `${API_BASE_URL}/orders`
+        LIST: `${API_BASE_URL}/orders`,
+        DETAIL: (id) => `${API_BASE_URL}/orders/${id}`
     },
     BANNERS: {
         LIST: `${API_BASE_URL}/banners`,
