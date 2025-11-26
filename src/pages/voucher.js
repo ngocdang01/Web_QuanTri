@@ -37,6 +37,7 @@ const Voucher = () => {
             <th>Tối thiểu</th>
             <th>Bắt đầu</th>
             <th>Kết thúc</th>
+            <th>Trạng thái</th>
           </tr>
         </thead>
 
@@ -50,6 +51,24 @@ const Voucher = () => {
               <td>{v.minOrderAmount}đ</td>
               <td>{new Date(v.startDate).toLocaleDateString("vi-VN")}</td>
               <td>{new Date(v.expireDate).toLocaleDateString("vi-VN")}</td>
+
+              <td>
+                {(() => {
+                  const today = new Date();
+                  const start = new Date(v.startDate);
+                  const end = new Date(v.expireDate);
+
+                  if (today < start)
+                    return (
+                      <span className="status inactive">Chưa bắt đầu</span>
+                    );
+
+                  if (today > end)
+                    return <span className="status expired">Hết hạn</span>;
+
+                  return <span className="status active">Đang hoạt động</span>;
+                })()}
+              </td>
             </tr>
           ))}
         </tbody>

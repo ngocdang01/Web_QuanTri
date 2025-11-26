@@ -35,3 +35,25 @@
     text-align: center;
     padding: 20px;
 }
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status.active {
+    background: #0bb38c;
+    color: white;
+}
+
+.status.inactive {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status.expired {
+    background: #f8d7da;
+    color: #721c24;
+}
+
