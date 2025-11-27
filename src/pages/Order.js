@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { orderAPI } from '../config/api';
-import '../styles/Order.css'; 
-
+import React, { useState, useEffect } from "react";
+import { orderAPI } from "../config/api";
+import "../styles/Order.css";
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [modalOrder, setModalOrder] = useState(null); 
+  const [activeOrderId, setActiveOrderId] = useState(null);
+  const [modalOrder, setModalOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage] = useState(6);
 
@@ -24,7 +24,7 @@ const Order = () => {
       if (Array.isArray(data)) {
         const uniqueOrders = data.filter(
           (order, index, self) =>
-            index === self.findIndex(o => o._id === order._id)
+            index === self.findIndex((o) => o._id === order._id)
         );
 
         cleanedOrders = uniqueOrders.sort((a, b) => {
@@ -38,6 +38,107 @@ const Order = () => {
       setError("Không thể tải danh sách đơn hàng");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirm = async (id) => {
+    if (!id) {
+      alert("Lỗi: ID đơn hàng không hợp lệ.");
+      return;
+    }
+    try {
+      await orderAPI.updateOrderStatus(id, "confirmed");
+      setOrders(
+        orders.map((o) => (o._id === id ? { ...o, status: "confirmed" } : o))
+      );
+      setActiveOrderId(null); // Close dropdown
+      alert("Đã xác nhận đơn hàng thành công!");
+    } catch (err) {
+      alert(
+        "Không thể xác nhận đơn hàng: " + (err.message || "Lỗi không xác định")
+      );
+      console.error("Error confirming order:", err);
+    }
+  };
+
+  const handleCancel = async (id) => {
+    if (!id) {
+      alert("Lỗi: ID đơn hàng không hợp lệ.");
+      return;
+    }
+    try {
+      await orderAPI.updateOrderStatus(id, "cancelled");
+      setOrders(
+        orders.map((o) => (o._id === id ? { ...o, status: "cancelled" } : o))
+      );
+      setActiveOrderId(null); // Close dropdown
+      alert("Đã hủy đơn hàng thành công!");
+    } catch (err) {
+      alert("Không thể hủy đơn hàng: " + (err.message || "Lỗi không xác định"));
+      console.error("Error cancelling order:", err);
+    }
+  };
+
+  const handleShipped = async (id) => {
+    if (!id) return alert("Lỗi: ID đơn hàng không hợp lệ.");
+    try {
+      await orderAPI.updateOrderStatus(id, "shipped");
+      setOrders(
+        orders.map((o) => (o._id === id ? { ...o, status: "shipped" } : o))
+      );
+      setActiveOrderId(null);
+      alert("Đã chuyển sang trạng thái Đang giao hàng!");
+    } catch (err) {
+      alert(
+        "Không thể chuyển trạng thái: " + (err.message || "Lỗi không xác định")
+      );
+    }
+  };
+
+  const toggleActions = (id) => {
+    setActiveOrderId((prevId) => (prevId === id ? null : id));
+  };
+
+  // Helper function to get status display text
+  const getStatusDisplay = (status) => {
+    switch (status) {
+      case "waiting":
+        return "Chờ xử lý";
+      case "pending":
+        return "Chờ xác nhận";
+      case "confirmed":
+        return "Đã xác nhận";
+      case "cancelled":
+        return "Đã hủy";
+      case "shipped":
+        return "Đang giao hàng";
+      case "delivered":
+        return "Đã nhận hàng";
+      case "returned":
+        return "Đã trả hàng";
+      default:
+        return status || "Không xác định";
+    }
+  };
+  // Helper function to get status class
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "waiting":
+        return "order-status-waiting";
+      case "pending":
+        return "order-status-pending";
+      case "confirmed":
+        return "order-status-confirmed";
+      case "cancelled":
+        return "order-status-cancelled";
+      case "shipped":
+        return "order-status-shipped";
+      case "delivered":
+        return "order-status-delivered";
+      case "returned":
+        return "order-status-returned";
+      default:
+        return "order-status-waiting";
     }
   };
 
@@ -76,17 +177,34 @@ const Order = () => {
           </tr>
         </thead>
         <tbody>
-            { currentOrders.map(order => {
-               const item = order.items?.[0] || {};
-              return ( 
+          {orders.length === 0 ? (
+            <tr>
+              <td
+                colSpan={11}
+                style={{
+                  textAlign: "center",
+                  color: "#888",
+                  fontStyle: "italic",
+                }}
+              >
+                Không có đơn hàng nào
+              </td>
+            </tr>
+          ) : (
+            currentOrders.map((order) => {
+              const item = order.items?.[0] || {};
+              return (
                 <tr key={order._id}>
                   <td>
-                    <button className="btn btn-detail" onClick={() => setModalOrder(order)}>
+                    <button
+                      className="btn btn-detail"
+                      onClick={() => setModalOrder(order)}
+                    >
                       Chi tiết
                     </button>
                   </td>
                   <td>{order.userId?._id?.slice(-6) || "N/A"}</td>
-                  <td>{item.name || '...'}</td>
+                  <td>{item.name || "..."}</td>
                   <td>{item.purchaseQuantity || 0}</td>
                   <td>{item.price?.toLocaleString("vi-VN") || 0} VNĐ</td>
                   <td>{order.shippingFee?.toLocaleString("vi-VN") || 0}</td>
@@ -94,73 +212,216 @@ const Order = () => {
                   <td>{order.finalTotal?.toLocaleString("vi-VN") || 0} VNĐ</td>
                   <td>{order.shippingAddress}</td>
                   <td>{order.paymentMethod}</td>
-                  <td>{order.status}</td>
-                  <td>{new Date(order.createdAt).toLocaleDateString("vi-VN")}</td>
+                  <td style={{ position: "relative" }}>
+                    {order.status === "waiting" ? (
+                      <div className="order-status-action-wrap">
+                        <button
+                          className={`order-status-badge ${getStatusClass(
+                            order.status
+                          )}`}
+                          onClick={() => toggleActions(order._id)}
+                        >
+                          {getStatusDisplay(order.status)}
+                        </button>
+                        {activeOrderId === order._id && (
+                          <div className="order-action-dropdown">
+                            <button
+                              className="btn btn-confirm"
+                              onClick={() => handleConfirm(order._id)}
+                            >
+                              Xác nhận đơn hàng
+                            </button>
+                            <button
+                              className="btn btn-cancel"
+                              onClick={() => handleCancel(order._id)}
+                            >
+                              Hủy đơn
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : order.status === "pending" ? (
+                      <div className="order-status-action-wrap">
+                        <button
+                          className={`order-status-badge ${getStatusClass(
+                            order.status
+                          )}`}
+                          onClick={() => toggleActions(order._id)}
+                        >
+                          {getStatusDisplay(order.status)}
+                        </button>
+                        {activeOrderId === order._id && (
+                          <div className="order-action-dropdown">
+                            <button
+                              className="btn btn-confirm"
+                              onClick={() => handleConfirm(order._id)}
+                            >
+                              Xác nhận đơn hàng
+                            </button>
+                            <button
+                              className="btn btn-cancel"
+                              onClick={() => handleCancel(order._id)}
+                            >
+                              Hủy đơn
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : order.status === "confirmed" ? (
+                      <div className="order-status-action-wrap">
+                        <button
+                          className={`order-status-badge ${getStatusClass(
+                            order.status
+                          )}`}
+                          onClick={() => toggleActions(order._id)}
+                        >
+                          {getStatusDisplay(order.status)}
+                        </button>
+                        {activeOrderId === order._id && (
+                          <div className="order-action-dropdown">
+                            <button
+                              className="btn btn-confirm"
+                              onClick={() => handleShipped(order._id)}
+                            >
+                              Chuyển sang đang giao hàng
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : order.status === "shipped" ? (
+                      <div className="order-status-action-wrap">
+                        <button
+                          className={`order-status-badge ${getStatusClass(
+                            order.status
+                          )}`}
+                          onClick={() => toggleActions(order._id)}
+                        >
+                          {getStatusDisplay(order.status)}
+                        </button>
+                      </div>
+                    ) : order.status === "delivered" ? (
+                      <div className="order-status-action-wrap">
+                        <button
+                          className={`order-status-badge ${getStatusClass(
+                            order.status
+                          )}`}
+                          onClick={() => toggleActions(order._id)}
+                        >
+                          {getStatusDisplay(order.status)}
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        className={`order-status-badge ${getStatusClass(
+                          order.status
+                        )}`}
+                      >
+                        {getStatusDisplay(order.status)}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                  </td>
                 </tr>
-              )
-            })}
+              );
+            })
+          )}
         </tbody>
       </table>
       <div className="pagination">
-          <div className="pagination">
-            <button
-              className="btn btn-pagination prev"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Trước
-            </button>
+        <div className="pagination">
+          <button
+            className="btn btn-pagination prev"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Trước
+          </button>
 
-            <div className="pagination-numbers">
-              {[...Array(totalPages)].map((_, index) => (
-                <button
-                  key={index + 1}
-                  className={`btn btn-pagination ${currentPage === index + 1 ? 'active' : ''}`}
-                  onClick={() => handlePageChange(index + 1)}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-
-            <button
-              className="btn btn-pagination next"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Sau
-            </button>
+          <div className="pagination-numbers">
+            {[...Array(totalPages)].map((_, index) => (
+              <button
+                key={index + 1}
+                className={`btn btn-pagination ${
+                  currentPage === index + 1 ? "active" : ""
+                }`}
+                onClick={() => handlePageChange(index + 1)}
+              >
+                {index + 1}
+              </button>
+            ))}
           </div>
 
+          <button
+            className="btn btn-pagination next"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Sau
+          </button>
+        </div>
       </div>
 
       {/* Modal dialog for order detail */}
       {modalOrder && (
-        <div className="order-modal-overlay" onClick={() => setModalOrder(null)}>
-          <div className="order-modal" onClick={e => e.stopPropagation()}>
-            <button className="order-modal-close" onClick={() => setModalOrder(null)}>&times;</button>
+        <div
+          className="order-modal-overlay"
+          onClick={() => setModalOrder(null)}
+        >
+          <div className="order-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="order-modal-close"
+              onClick={() => setModalOrder(null)}
+            >
+              &times;
+            </button>
             <div className="order-detail-box left-align">
-              <div><b>Mã đơn hàng:</b> {modalOrder._id || 'N/A'}</div>
-              <div><b>Mã code:</b> {modalOrder.order_code || 'N/A'}</div>
-              {modalOrder.userId && typeof modalOrder.userId === 'object' && (
+              <div>
+                <b>Mã đơn hàng:</b> {modalOrder._id || "N/A"}
+              </div>
+              <div>
+                <b>Mã code:</b> {modalOrder.order_code || "N/A"}
+              </div>
+              {modalOrder.userId && typeof modalOrder.userId === "object" && (
                 <>
-                  <div><b>Tên người dùng:</b> {modalOrder.userId.name || ''}</div>
-                  <div><b>Email:</b> {modalOrder.userId.email || ''}</div>
+                  <div>
+                    <b>Tên người dùng:</b> {modalOrder.userId.name || ""}
+                  </div>
+                  <div>
+                    <b>Email:</b> {modalOrder.userId.email || ""}
+                  </div>
                 </>
               )}
-              <div><b>Địa chỉ:</b> {modalOrder.shippingAddress || 'Không có địa chỉ'}</div>
-              <div><b>Thông tin sản phẩm:</b></div>
-              {modalOrder.items && modalOrder.items.map((item, idx) => (
-                <div key={item.productId || idx} style={{ marginLeft: '20px', marginBottom: '10px' }}>
-                  • {item.name || 'Không có tên'} 
-                  (SL: {item.purchaseQuantity || 0}, 
-                  Size: {item.size || 'N/A'}, 
-                  Màu: {item.color || 'N/A'},
-                  Giá: {item.price ? item.price.toLocaleString('vi-VN') + ' VNĐ' : 'N/A'})
-                </div>
-              ))}
+              <div>
+                <b>Địa chỉ:</b>{" "}
+                {modalOrder.shippingAddress || "Không có địa chỉ"}
+              </div>
+              <div>
+                <b>Thông tin sản phẩm:</b>
+              </div>
+              {modalOrder.items &&
+                modalOrder.items.map((item, idx) => (
+                  <div
+                    key={item.productId || idx}
+                    style={{ marginLeft: "20px", marginBottom: "10px" }}
+                  >
+                    • {item.name || "Không có tên"}
+                    (SL: {item.purchaseQuantity || 0}, Size:{" "}
+                    {item.size || "N/A"}, Màu: {item.color || "N/A"}, Giá:{" "}
+                    {item.price
+                      ? item.price.toLocaleString("vi-VN") + " VNĐ"
+                      : "N/A"}
+                    )
+                  </div>
+                ))}
               {modalOrder.voucher && (
-                <div><b>Mã giảm giá:</b> {modalOrder.voucher.code || 'N/A'} (Giảm: {modalOrder.voucher.discountAmount?.toLocaleString('vi-VN') || '0'} VNĐ)</div>
+                <div>
+                  <b>Mã giảm giá:</b> {modalOrder.voucher.code || "N/A"} (Giảm:{" "}
+                  {modalOrder.voucher.discountAmount?.toLocaleString("vi-VN") ||
+                    "0"}{" "}
+                  VNĐ)
+                </div>
               )}
             </div>
           </div>
