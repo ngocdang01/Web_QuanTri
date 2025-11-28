@@ -6,6 +6,8 @@ const Voucher = () => {
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingVoucher, setEditingVoucher] = useState(null);
 
   const emptyForm = {
       code: "",
@@ -69,6 +71,36 @@ const Voucher = () => {
         setShowAddForm(false);
     };
 
+    // Handle edit button click
+    const handleEdit = (voucher) => {
+        setEditingVoucher(voucher);
+        setNewVoucher({
+            ...voucher,
+            startDate: voucher.startDate.split("T")[0],
+            expireDate: voucher.expireDate.split("T")[0],
+        });
+        setShowEditForm(true);
+        setShowAddForm(false);
+    };
+
+    // Handle update submit
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        const data = {
+          ...newVoucher,
+          discount: Number(newVoucher.discount),
+          minOrderAmount: Number(newVoucher.minOrderAmount),
+        };
+
+        const res = await axios.put(
+          `http://localhost:3002/api/vouchers/${editingVoucher.code}`,
+          data
+        );
+
+        setVouchers(vouchers.map(v => v.code === editingVoucher.code ? res.data.data : v ));
+        setShowEditForm(false);
+    };
+
   if (loading) return <div className="loading">Đang tải...</div>;
 
   return (
@@ -92,6 +124,7 @@ const Voucher = () => {
             <th>Bắt đầu</th>
             <th>Kết thúc</th>
             <th>Trạng thái</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
 
@@ -123,6 +156,14 @@ const Voucher = () => {
                   return <span className="status active">Đang hoạt động</span>;
                 })()}
               </td>
+              <td>
+                  <button
+                    className="btn btn-edit"
+                    onClick={() => handleEdit(v)}
+                  >
+                    Sửa
+                  </button>
+                </td>
             </tr>
           ))}
         </tbody>
@@ -188,6 +229,116 @@ const Voucher = () => {
           </form>
         </div>
       )}
+
+      {showEditForm && (
+        <div className="add-voucher-form">
+          <div className="form-overlay" onClick={() => setShowEditForm(false)} />
+            <form className="form-content" onSubmit={handleUpdate}>
+              <h3>Sửa voucher</h3>
+                <div className="form-group">
+              <label>Mã voucher</label>
+              <input
+                name="code"
+                value={newVoucher.code}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Nhãn</label>
+              <input
+                name="label"
+                value={newVoucher.label}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Mô tả</label>
+              <textarea
+                name="description"
+                value={newVoucher.description}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Giảm phí ship</label>
+              <input
+                type="number"
+                name="discount"
+                value={newVoucher.discount}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Đơn tối thiểu</label>
+              <input
+                type="number"
+                name="minOrderAmount"
+                value={newVoucher.minOrderAmount}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Giới hạn mỗi user</label>
+              <input
+                type="number"
+                name="usageLimitPerUser"
+                value={newVoucher.usageLimitPerUser}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Tổng số lượt voucher</label>
+              <input
+                type="number"
+                name="totalUsageLimit"
+                value={newVoucher.totalUsageLimit}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Ngày bắt đầu</label>
+              <input
+                type="date"
+                name="startDate"
+                value={newVoucher.startDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Ngày kết thúc</label>
+              <input
+                type="date"
+                name="expireDate"
+                value={newVoucher.expireDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+                <div className="form-buttons">
+                    <button type="submit" className="btn btn-submit">Cập nhật</button>
+                    <button type="button" className="btn btn-cancel" onClick={() => setShowEditForm(false)}>
+                        Hủy
+                    </button>
+                </div>
+            </form>
+        </div>
+            )}
     </div>
 
   );
