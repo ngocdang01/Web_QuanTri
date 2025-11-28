@@ -5,6 +5,7 @@ import Product from './Product';
 import Order from './Order';
 import Banner from './Banner';
 import '../styles/Home.css';
+import Voucher from './voucher';
 import AdminCategories from './AdminCategories';
 
 const Home = () => {
@@ -20,6 +21,7 @@ const Home = () => {
           <li className={tab==='categories' ? 'active' : ''} onClick={()=>setTab('categories')}>Quản lý danh mục</li>
           <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('products')}>Quản lý sản phẩm</li>
           <li className={tab==='banner' ? 'active' : ''} onClick={()=>setTab('banner')}>Quản lý Banner</li>
+          <li className={tab==='voucher' ? 'active' : ''} onClick={()=>setTab('voucher')}>Quản lý voucher</li>
         </ul>
       </aside>
       <main className="main-content">
@@ -28,6 +30,7 @@ const Home = () => {
         {tab === 'categories' && <AdminCategories />}
         {tab === 'products' && <Product />}
         {tab === 'orders' && <Order />}
+        {tab === 'voucher' && <Voucher />}
         {tab === 'banner' && <Banner />}
       </main>
     </div>
