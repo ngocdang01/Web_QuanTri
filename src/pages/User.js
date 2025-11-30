@@ -10,7 +10,10 @@ const User = () => {
   const [usersPerPage] = useState(6);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
       try {
         // Get token from localStorage
         const token = localStorage.getItem("token");
@@ -31,8 +34,29 @@ const User = () => {
       }
     };
 
-    fetchUsers();
-  }, []);
+  // ⭐ HÀM KHÓA / MỞ NGƯỜI DÙNG
+  const handleToggleActive = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.patch(
+        `http://localhost:3002/api/users/${userId}/toggle-active`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Cập nhật lại danh sách users
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === userId ? { ...u, isActive: res.data.isActive } : u
+        )
+      );
+
+      alert(res.data.message);
+    } catch (err) {
+      alert("Không thể cập nhật trạng thái người dùng!");
+    }
+  };
 
   // Add pagination calculations
   const indexOfLastUser = currentPage * usersPerPage;
@@ -86,6 +110,7 @@ const User = () => {
               <th>Họ tên</th>
               <th>Email</th>
               <th>Vai trò</th>
+              <th>Trạng thái</th>
               <th>Ngày tạo</th>
             </tr>
           </thead>
@@ -100,6 +125,26 @@ const User = () => {
                     {user.role}
                   </span>
                 </td>
+                {/*  Thay code để admin luôn hoạt động */}
+                <td>
+                  {user.role === "admin" ? (
+                    <span style={{ color: "#0f766e", fontWeight: "600" }}>
+                      Luôn hoạt động
+                    </span>
+                  ) : (
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={user.isActive}
+                        onChange={() => handleToggleActive(user._id)}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  )}
+                </td>
+
+
+
                 <td>{new Date(user.createdAt).toLocaleDateString("vi-VN")}</td>
               </tr>
             ))}
