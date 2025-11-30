@@ -38,6 +38,9 @@ export const API_ENDPOINTS = {
         UPDATE: (id) => `${API_BASE_URL}/banners/${id}`,
         DELETE: (id) => `${API_BASE_URL}/banners/${id}`,
         TOGGLE_STATUS: (id) => `${API_BASE_URL}/banners/${id}/toggle`,
+    },
+    SALE_PRODUCTS: {
+        LIST: `${API_BASE_URL}/sale-products`
     }
 };
 
@@ -231,6 +234,15 @@ export const bannerAPI = {
         return handleResponse(res);
     }
 };
+// === SALE PRODUCTS ===
+export const saleProductAPI = {
+    getAllSaleProducts: async () => {
+        const res = await fetch(API_ENDPOINTS.SALE_PRODUCTS.LIST, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    }
+}
 
 const apiConfig = {
   API_BASE_URL,

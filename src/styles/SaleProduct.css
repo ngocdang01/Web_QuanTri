@@ -1,0 +1,185 @@
+/* ===================== */
+/* CONTAINER + HEADER    */
+/* ===================== */
+.sale-products-container {
+  padding: 20px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.sale-products-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.sale-products-header h2 {
+  color: #333;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* Nút thêm sản phẩm */
+.add-product-btn {
+  background: linear-gradient(135deg, #607dff 0%, #5d85ff 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  width: 150px;
+}
+
+.add-product-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* ===================== */
+/* TABLE WRAPPER         */
+/* ===================== */
+.sale-products-table-wrapper {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  padding: 0 0 10px 0;
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+/* ===================== */
+/* TABLE                 */
+/* ===================== */
+.sale-products-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+.sale-products-table thead tr {
+  background: #f7f7f7;
+}
+
+.sale-products-table th,
+.sale-products-table td {
+  padding: 14px 12px;
+  text-align: left;
+  font-size: 15px;
+}
+
+.sale-products-table th {
+  color: #222;
+  font-weight: 700;
+  border-bottom: 2px solid #ececec;
+}
+
+.sale-products-table td {
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+/* ===================== */
+/* IMAGE                 */
+/* ===================== */
+.table-product-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f5f5f5;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ===================== */
+/* PRICES                */
+/* ===================== */
+.original-price {
+  color: #999;
+  text-decoration: line-through;
+  font-size: 14px;
+}
+
+.discount-price {
+  color: #e53935;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* ===================== */
+/* ACTION BUTTONS        */
+/* ===================== */
+.sale-products-table td.action-cell {
+  min-width: 180px;
+  white-space: nowrap;
+}
+
+.action-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Nút chung */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.45rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* Edit button */
+.btn-edit {
+  background-color: #4c6ef5;
+  color: white;
+}
+
+.btn-edit:hover {
+  background-color: #3b5bdb;
+  color: white;
+}
+
+/* Delete button */
+.btn-delete {
+  background-color: #e53935;
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #c62828;
+  color: white;
+}
+
+/* ===================== */
+/* RESPONSIVE            */
+/* ===================== */
+@media (max-width: 900px) {
+  .sale-products-table {
+    min-width: 900px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sale-products-table {
+    min-width: 600px;
+  }
+  .sale-products-header h2 {
+    font-size: 18px;
+  }
+}
