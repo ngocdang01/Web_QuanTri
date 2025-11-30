@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import Dashboard from './Dashboard';
 import User from './User';
 import Product from './Product';
@@ -7,13 +7,15 @@ import Banner from './Banner';
 import '../styles/Home.css';
 import Voucher from './voucher';
 import AdminCategories from './AdminCategories';
+import logo from "../assets/logo_shop.png";
 
 const Home = () => {
-   const [tab, setTab] = useState('dashboard');
+  const [tab, setTab] = useState('dashboard');
 
   return (
- <div className="admin-layout">
+    <div className="admin-layout">
       <aside className="sidebar">
+        <img src={logo} alt="Logo" className="sidebar-logo" />
         <h3>Quản trị viên</h3>
         <ul>
           <li className={tab==='dashboard' ? 'active' : ''} onClick={()=>setTab('dashboard')}>Thống kê</li>
@@ -22,8 +24,10 @@ const Home = () => {
           <li className={tab==='products' ? 'active' : ''} onClick={()=>setTab('products')}>Quản lý sản phẩm</li>
           <li className={tab==='banner' ? 'active' : ''} onClick={()=>setTab('banner')}>Quản lý Banner</li>
           <li className={tab==='voucher' ? 'active' : ''} onClick={()=>setTab('voucher')}>Quản lý voucher</li>
+          <li className={tab==='orders' ? 'active' : ''} onClick={()=>setTab('orders')}>Quản lý đơn hàng</li>
         </ul>
       </aside>
+
       <main className="main-content">
         {tab === 'dashboard' && <Dashboard />}
         {tab === 'users' && <User />}
@@ -37,4 +41,4 @@ const Home = () => {
   );
 };
 
-export default Home; 
+export default Home;
