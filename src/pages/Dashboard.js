@@ -5,7 +5,8 @@ import {
     CalendarOutlined, EyeOutlined, CheckCircleOutlined,
     CloseCircleOutlined, ClockCircleOutlined, CarOutlined, FileDoneOutlined
 } from '@ant-design/icons';
-
+// import thư viện biểu đồ
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { productAPI, userAPI, orderAPI } from '../config/api';
 import dayjs from 'dayjs';
 
@@ -28,28 +29,29 @@ const getStatusTag = (status) => {
         default: return <Tag color="default">{status}</Tag>;
     }
 };
+
 const calculateTopUsers = (orders, users) => {
     if (!orders || !users) return [];
     const userSpendingMap = {};
 
     orders.forEach(order => {
         if (order.status === 'delivered') {
-            
-            const userId = order.userId; 
-            
+            const userId = typeof order.userId === 'object' ? order.userId?._id : order.userId;            
             if (userId) {
                 if (!userSpendingMap[userId]) {
                     userSpendingMap[userId] = { totalSpent: 0, orderCount: 0 };
                 }
-                userSpendingMap[userId].totalSpent += (order.totalPrice || 0); 
+                userSpendingMap[userId].totalSpent += (order.finalTotal || 0); 
                 userSpendingMap[userId].orderCount += 1;
             }
         }
     });
+
     return users.map(user => {
         const stats = userSpendingMap[user._id] || { totalSpent: 0, orderCount: 0 };
         return { ...user, totalSpent: stats.totalSpent, orderCount: stats.orderCount };
     })
+    .filter(u => u.totalSpent > 0) 
     .sort((a, b) => b.totalSpent - a.totalSpent)
     .slice(0, 5);
 };
@@ -59,9 +61,15 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ totalProducts: 0, totalUsers: 0, totalRevenue: 0, todayOrders: 0 });
 
-    const [orders, setOrders] = useState([]);
     const [topProducts, setTopProducts] = useState([]);
     const [topUsers, setTopUsers] = useState([]);
+    const [orders, setOrders] = useState([]);
+
+    const [dateRange, setDateRange] = useState([dayjs().startOf('month'), dayjs()]);
+    const [filteredRevenue, setFilteredRevenue] = useState(0);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [userOrders, setUserOrders] = useState([]);
 
     const fetchDashboardData = useCallback(async () => {
         try {
@@ -75,7 +83,7 @@ const Dashboard = () => {
             const orderData = Array.isArray(ordersRes) ? ordersRes : ordersRes.data?.orders || ordersRes.data || [];
             const totalRevenue = orderData
                 .filter(o => o.status === 'delivered')
-                .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
+                .reduce((sum, o) => sum + Number(o.finalTotal || 0), 0);
 
             const today = dayjs().startOf('day');
             const todayOrders = orderData
@@ -97,7 +105,7 @@ const Dashboard = () => {
                 .sort((a, b) => b.sales - a.sales)
                 .slice(0, 5);
             setTopProducts(sortedTopProducts);
-            
+
             const rankedUsers = calculateTopUsers(orderData, usersData);
             setTopUsers(rankedUsers);
             
@@ -115,6 +123,33 @@ const Dashboard = () => {
         fetchDashboardData();
     }, [fetchDashboardData]);
 
+    const handleShowUserDetail = (user) => {
+        setSelectedUser(user);
+        const specificOrders = orders.filter(order => {
+            const orderUserId = typeof order.userId === 'object' ? order.userId?._id : order.userId;
+            return orderUserId === user._id;
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        setUserOrders(specificOrders);
+        setIsModalVisible(true);
+    };
+
+    const topUserColumns = [
+        {
+            title: 'Khách hàng', dataIndex: 'name', key: 'name',
+            render: (text, record) => <Space><Avatar icon={<UserOutlined />} src={record.avatar} /><Text strong>{text}</Text></Space>
+        },
+        { title: 'Số đơn', dataIndex: 'orderCount', key: 'orderCount', align: 'center', render: (count) => <Tag color="blue">{count} đơn</Tag> },
+        { title: 'Tổng chi tiêu', dataIndex: 'totalSpent', key: 'totalSpent', align: 'right', render: (value) => <Text type="danger" strong>{formatCurrency(value)}</Text> },
+        { title: '', key: 'action', render: (_, record) => <Button type="link" icon={<EyeOutlined />} onClick={() => handleShowUserDetail(record)} /> }
+    ];
+
+    const orderDetailColumns = [
+        { title: 'Mã đơn', dataIndex: '_id', key: '_id', render: (text) => <Text code>{text.slice(-6).toUpperCase()}</Text> },
+        { title: 'Ngày đặt', dataIndex: 'createdAt', key: 'createdAt', render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm') },
+        { title: 'Tổng tiền', dataIndex: 'finalTotal', key: 'finalTotal', align: 'right', render: (price) => formatCurrency(price) },
+        { title: 'Trạng thái', dataIndex: 'status', key: 'status', align: 'center', render: (status) => getStatusTag(status) }
+    ];
     return (
         <div style={{ padding: '0 12px' }}>
             <h2 style={{ marginBottom: 24 }}>Tổng quan hệ thống</h2>
@@ -132,9 +167,56 @@ const Dashboard = () => {
                     <Card loading={loading}><Statistic title="Đã bán hôm nay" value={stats.todayOrders} prefix={<ShoppingOutlined style={{ color: '#722ed1' }}/>} /></Card>
                 </Col>
             </Row>
-            <div style={{ textAlign: 'center', color: '#888' }}>
-                <p>...Dữ liệu chi tiết đang được xử lý...</p>
-            </div>
+
+            <Row style={{ marginBottom: 24 }}>
+                <Col span={24}>
+                    <Card title={<Space><CalendarOutlined /><span>Thống kê doanh thu theo thời gian</span></Space>}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <RangePicker value={dateRange} onChange={setDateRange} format="DD/MM/YYYY" />
+                            <div style={{ fontSize: '24px', color: '#3f8600', fontWeight: 'bold' }}>
+                                {formatCurrency(filteredRevenue)}
+                            </div>
+                        </div>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row gutter={[16, 16]}>
+                <Col xs={24} lg={12}>
+                    <Card title="Top 5 Sản phẩm bán chạy nhất" loading={loading} style={{ height: '100%' }}>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={topProducts} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                                <Tooltip />
+                                <Bar dataKey="count" fill="#1890ff" barSize={20} radius={[0, 4, 4, 0]} label={{ position: 'right' }} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </Card>
+                </Col>
+
+                <Col xs={24} lg={12}>
+                    <Card title={<Space><CrownOutlined style={{ color: '#faad14' }} /><span>Top Khách hàng VIP</span></Space>} loading={loading} style={{ height: '100%' }}>
+                        <Table dataSource={topUsers} columns={topUserColumns} rowKey="_id" pagination={false} size="small" />
+                    </Card>
+                </Col>
+            </Row>
+
+            <Modal
+                title={`Lịch sử mua hàng: ${selectedUser?.name}`}
+                open={isModalVisible}
+                footer={null}
+                width={800}
+            >
+                <Table 
+                    dataSource={userOrders} 
+                    columns={orderDetailColumns} 
+                    rowKey="_id"
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                />
+            </Modal>
         </div>
     );
 };
