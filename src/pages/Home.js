@@ -7,7 +7,7 @@ import Banner from './Banner';
 import '../styles/Home.css';
 import Voucher from './voucher';
 import AdminCategories from './AdminCategories';
-import logo from "../assets/logo_shop.png";
+import logo from '../assets/Logo-Cool-Mate_final.jpg';
 
 const Home = () => {
   const [tab, setTab] = useState('dashboard');

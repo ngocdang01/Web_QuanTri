@@ -141,6 +141,25 @@ const Order = () => {
     }
   };
 
+  const handleDelivered = async (id) => {
+    if (!id) return alert("Lỗi: ID đơn hàng không hợp lệ.");
+    try {
+      await orderAPI.updateOrderStatus(id, "delivered");
+
+      setOrders(
+        orders.map((o) => (o._id === id ? { ...o, status: "delivered" } : o))
+      );
+      setFilteredOrders(
+        orders.map((o) => (o._id === id ? { ...o, status: "delivered" } : o))
+      );
+
+      setActiveOrderId(null);
+      alert("Đã chuyển sang trạng thái Đã nhận hàng!");
+    } catch (err) {
+      alert("Không thể chuyển trạng thái: " + (err.message || "Lỗi không xác định"));
+    }
+  };
+
   const toggleActions = (id) => {
     setActiveOrderId((prevId) => (prevId === id ? null : id));
   };
@@ -453,6 +472,16 @@ const Order = () => {
                         >
                           {getStatusDisplay(order.status)}
                         </button>
+                        {activeOrderId === order._id && (
+                          <div className="order-action-dropdown">
+                            <button
+                              className="btn btn-confirm"
+                              onClick={() => handleDelivered(order._id)}
+                            >
+                              Chuyển sang đã nhận hàng
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : order.status === "delivered" ? (
                       <div className="order-status-action-wrap">

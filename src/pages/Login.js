@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSignOutAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { authAPI } from '../config/api';
-import logo from '../assets/logo_shop.png';
+import logo from '../assets/Logo-Cool-Mate_final.jpg';
 import '../styles/Login.css';
 
 const Login = () => {
@@ -100,7 +100,7 @@ const Login = () => {
             <img src={logo} alt="SPORTS SHOP" className="logo" />
           </div>
           <div className="welcome-text">
-            <h2>Welcome to Sports Shop!</h2>
+            <h2>Welcome to Coolmate!</h2>
             {/* <p>Don't have an account?</p>
             <button className="register-btn">Register</button> */}
           </div>

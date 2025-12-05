@@ -273,8 +273,13 @@ const Product = () => {
       sold: product.sold || "",
       description: product.description || "",
       images:
-        product.images && product.images.length > 0 ? product.images : [""],
-      size_items: product.size_items || [],
+      product.images && product.images.length > 0 ? product.images : [""],
+      size_items: product.sizes
+        ? product.sizes.map(s => ({
+            size: s.size,
+            quantity: s.quantity
+          }))
+        : [],
       categoryCode: product.categoryCode || "",
     });
     setShowEditForm(true);
