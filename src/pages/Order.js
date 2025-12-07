@@ -185,8 +185,6 @@ const Order = () => {
     switch (status) {
       case "waiting":
         return "Chờ xử lý";
-      case "pending":
-        return "Chờ xác nhận";
       case "confirmed":
         return "Đã xác nhận";
       case "cancelled":
@@ -195,8 +193,6 @@ const Order = () => {
         return "Đang giao hàng";
       case "delivered":
         return "Đã nhận hàng";
-      case "returned":
-        return "Đã trả hàng";
       default:
         return status || "Không xác định";
     }
@@ -206,8 +202,6 @@ const Order = () => {
     switch (status) {
       case "waiting":
         return "order-status-waiting";
-      case "pending":
-        return "order-status-pending";
       case "confirmed":
         return "order-status-confirmed";
       case "cancelled":
@@ -216,8 +210,6 @@ const Order = () => {
         return "order-status-shipped";
       case "delivered":
         return "order-status-delivered";
-      case "returned":
-        return "order-status-returned";
       default:
         return "order-status-waiting";
     }
@@ -257,7 +249,6 @@ const Order = () => {
             >
               <option value="">-- Tất cả --</option>
               <option value="waiting">Chờ xử lý</option>
-              <option value="pending">Chờ xác nhận</option>
               <option value="confirmed">Đã xác nhận</option>
               <option value="shipped">Đang giao</option>
               <option value="delivered">Đã nhận</option>
@@ -414,34 +405,7 @@ const Order = () => {
                           </div>
                         )}
                       </div>
-                    ) : order.status === "pending" ? (
-                      <div className="order-status-action-wrap">
-                        <button
-                          className={`order-status-badge ${getStatusClass(
-                            order.status
-                          )}`}
-                          onClick={() => toggleActions(order._id)}
-                        >
-                          {getStatusDisplay(order.status)}
-                        </button>
-                        {activeOrderId === order._id && (
-                          <div className="order-action-dropdown">
-                            <button
-                              className="btn btn-confirm"
-                              onClick={() => handleConfirm(order._id)}
-                            >
-                              Xác nhận đơn hàng
-                            </button>
-                            <button
-                              className="btn btn-cancel"
-                              onClick={() => handleCancel(order._id)}
-                            >
-                              Hủy đơn
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : order.status === "confirmed" ? (
+                    )  : order.status === "confirmed" ? (
                       <div className="order-status-action-wrap">
                         <button
                           className={`order-status-badge ${getStatusClass(

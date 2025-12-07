@@ -22,10 +22,10 @@ const getStatusTag = (status) => {
     // Chuẩn hóa trạng thái về chữ thường
     const normalizedStatus = status ? status.toLowerCase() : '';
     switch (normalizedStatus) {
-        case 'waiting': case 'pending': return <Tag icon={<ClockCircleOutlined />} color="warning">Chờ xác nhận</Tag>;
+        case 'waiting': case 'pending': return <Tag icon={<ClockCircleOutlined />} color="warning">Chờ xử lý</Tag>;
         case 'confirmed': return <Tag icon={<FileDoneOutlined />} color="blue">Đã xác nhận</Tag>;
-        case 'shipping': case 'delivering': case 'shipped': case 'shipper': return <Tag icon={<CarOutlined />} color="geekblue">Đang vận chuyển</Tag>;
-        case 'delivered': case 'success': return <Tag icon={<CheckCircleOutlined />} color="success">Giao thành công</Tag>;
+        case 'shipping': case 'delivering': case 'shipped': case 'shipper': return <Tag icon={<CarOutlined />} color="geekblue">Đang giao</Tag>;
+        case 'delivered': case 'success': return <Tag icon={<CheckCircleOutlined />} color="success">Đã nhận hàng</Tag>;
         case 'cancelled': case 'canceled': return <Tag icon={<CloseCircleOutlined />} color="error">Đã hủy</Tag>;
         default: return <Tag color="default">{status}</Tag>;
     }

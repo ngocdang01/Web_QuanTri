@@ -97,7 +97,7 @@ const Login = () => {
       <div className="login-box">
         <div className="left-panel">
           <div className="logo-container">
-            <img src={logo} alt="SPORTS SHOP" className="logo" />
+            <img src={logo} alt="COOLMATE SHOP" className="logo" />
           </div>
           <div className="welcome-text">
             <h2>Welcome to Coolmate!</h2>
