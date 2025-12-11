@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { productAPI } from "../config/api";
+import { productAPI, categoryAPI } from "../config/api";
 import "../styles/Product.css";
 
 const Product = () => {
@@ -10,6 +10,7 @@ const Product = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
@@ -44,6 +45,7 @@ const Product = () => {
   // Fetch products on component mount
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
@@ -59,6 +61,14 @@ const Product = () => {
       setLoading(false);
     }
   };
+  const fetchCategories = async () => {
+  try {
+    const data = await categoryAPI.getAllCategories();
+    setCategories(data);
+  } catch (err) {
+    console.error("Lỗi lấy danh mục:", err);
+  }
+};
 
   // Handle input change
   const handleInputChange = (e) => {
@@ -171,6 +181,11 @@ const Product = () => {
     e.preventDefault();
 
     const filteredImages = newProduct.images.filter((img) => img.trim() !== "");
+
+    if (Number(newProduct.price) < 0) {
+      alert("Giá sản phẩm không được âm!");
+      return;
+    }
 
     if (isDuplicateName(newProduct.name)) {
       alert("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác!");
@@ -288,6 +303,11 @@ const Product = () => {
   // Handle update submit
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (Number(newProduct.price) < 0) {
+      alert("Giá sản phẩm không được âm!");
+      return;
+    }
+
     if (!newProduct.name.trim()) {
       alert("Vui lòng nhập tên sản phẩm!");
       return;
@@ -357,27 +377,43 @@ const Product = () => {
   };
 
   const handleSizeToggle = (size, checked) => {
+  setNewProduct((prev) => {
+    let updated = [...prev.size_items];
+
+    if (checked) {
+      updated.push({ size, quantity: ""});
+    } else {
+      updated = updated.filter((s) => s.size !== size);
+    }
+
+    const totalStock = updated.reduce(
+      (sum, item) => sum + Number(item.quantity || 0),
+      0
+    );
+
+    return { ...prev, size_items: updated, stock: totalStock };
+  });
+};
+
+
+  const handleSizeQuantityChange = (size, quantity) => {
     setNewProduct((prev) => {
-      let updated = [...prev.size_items];
+      const updated = prev.size_items.map((s) =>
+        s.size === size
+          ? { ...s, quantity: quantity === "" ? "" : Number(quantity) }
+          : s
+      );
 
-      if (checked) {
-        updated.push({ size, quantity: "" });
-      } else {
-        updated = updated.filter((s) => s.size !== size);
-      }
+      const totalStock = updated.reduce(
+        (sum, item) => sum + (Number(item.quantity) || 0),
+        0
+      );
 
-      return { ...prev, size_items: updated };
+      return { ...prev, size_items: updated, stock: totalStock };
     });
   };
 
-  const handleSizeQuantityChange = (size, quantity) => {
-    setNewProduct((prev) => ({
-      ...prev,
-      size_items: prev.size_items.map((s) =>
-        s.size === size ? { ...s, quantity } : s
-      ),
-    }));
-  };
+
 
   // Format date function
   const formatDate = (dateString) => {
@@ -472,6 +508,10 @@ const Product = () => {
                 name="price"
                 value={newProduct.price}
                 onChange={handleInputChange}
+                min={0}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e") e.preventDefault();
+                }}
                 required
               />
             </div>
@@ -535,12 +575,19 @@ const Product = () => {
 
             <div className="form-group">
               <label>Mã danh mục:</label>
-              <input
-                type="text"
+              <select
                 name="categoryCode"
                 value={newProduct.categoryCode}
                 onChange={handleInputChange}
-              />
+                required
+              >
+                <option value="">-- Chọn danh mục --</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.code}>
+                    {cat.name} ({cat.code})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">
@@ -567,13 +614,10 @@ const Product = () => {
                         <input
                           type="number"
                           className="quantity-input"
-                          value={selected.quantity}
+                          value={selected.quantity === 0 ? "" : selected.quantity}
                           min={0}
                           onChange={(e) =>
-                            handleSizeQuantityChange(
-                              size,
-                              Number(e.target.value)
-                            )
+                            handleSizeQuantityChange(size, e.target.value)
                           }
                           placeholder="Số lượng"
                           required
@@ -625,6 +669,10 @@ const Product = () => {
                 type="number"
                 name="price"
                 value={newProduct.price}
+                min={0}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e") e.preventDefault();
+                }}
                 onChange={handleInputChange}
                 required
               />
@@ -635,8 +683,14 @@ const Product = () => {
                 type="number"
                 name="stock"
                 value={newProduct.stock}
-                onChange={handleInputChange}
-                required
+                readOnly
+                onKeyDown={(e) => e.preventDefault()}
+                onWheel={(e) => e.target.blur()}
+                style={{
+                  backgroundColor: "#e9ecef",
+                  cursor: "not-allowed",
+                  pointerEvents: "none"
+                }}
               />
             </div>
             <div className="form-group">
@@ -698,13 +752,20 @@ const Product = () => {
             </div>
             <div className="form-group">
               <label>Mã danh mục:</label>
-              <input
-                type="text"
+              <select
                 name="categoryCode"
                 value={newProduct.categoryCode}
                 onChange={handleInputChange}
-                placeholder="VD: chelsea, japan, vietnam, etc."
-              />
+                required
+              >
+                <option value="">-- Chọn danh mục --</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.code}>
+                    {cat.name} ({cat.code})
+                  </option>
+                ))}
+              </select>
+
             </div>
             <div className="form-group">
               <label>Size và số lượng:</label>
@@ -731,20 +792,20 @@ const Product = () => {
                         <input
                           type="number"
                           className="quantity-input"
-                          value={selected.quantity}
+                          value={selected.quantity === "" ? "" : selected.quantity}
                           min={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "-" || e.key === "e") e.preventDefault();
+                          }}
                           onChange={(e) =>
-                            handleSizeQuantityChange(
-                              size,
-                              Number(e.target.value)
-                            )
+                            handleSizeQuantityChange(size, e.target.value)
                           }
                           placeholder="Số lượng"
                           required
                         />
                       )}
                     </div>
-                  );
+                  )
                 })}
               </div>
             </div>
