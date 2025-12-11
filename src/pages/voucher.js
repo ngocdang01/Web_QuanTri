@@ -5,7 +5,6 @@ import "../styles/Voucher.css";
 const Voucher = () => {
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
@@ -22,12 +21,9 @@ const Voucher = () => {
     description: "",
     discount: "",
     minOrderAmount: "",
-    usageLimitPerUser: "",
-    totalUsageLimit: "",
     startDate: "",
     expireDate: "",
     status: "active",
-    type: "shipping",
   };
 
   const [newVoucher, setNewVoucher] = useState(emptyForm);
@@ -40,6 +36,8 @@ const Voucher = () => {
     try {
       const res = await axios.get("http://localhost:3002/api/vouchers");
       setVouchers(res.data.data || []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách:", err);
     } finally {
       setLoading(false);
     }
@@ -59,63 +57,81 @@ const Voucher = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const discountVal = Number(newVoucher.discount);
+    const minOrderVal = Number(newVoucher.minOrderAmount);
+
+    if (discountVal < 0 || minOrderVal < 0) {
+      alert("Lỗi: Giảm giá và Đơn tối thiểu không được là số âm!");
+      return;
+    }
 
     const data = {
       code: newVoucher.code.toUpperCase(),
       label: newVoucher.label,
       description: newVoucher.description,
-      discount: Number(newVoucher.discount),
-      minOrderAmount: Number(newVoucher.minOrderAmount),
-      usageLimitPerUser: Number(newVoucher.usageLimitPerUser),
-      totalUsageLimit: Number(newVoucher.totalUsageLimit),
+      discount: discountVal,
+      minOrderAmount: minOrderVal,
       startDate: newVoucher.startDate,
       expireDate: newVoucher.expireDate,
       status: newVoucher.status,
-      type: "shipping",
-      createdBy: "admin",
-      isGlobal: false,
     };
-
-    console.log("📌 Data gửi lên BE:", data); // kiểm tra data FE gửi
 
     try {
       const res = await axios.post(
         "http://localhost:3002/api/vouchers/add",
         data
       );
-      setVouchers([...vouchers, res.data.data]);
+      setVouchers([res.data.data, ...vouchers]);
       setShowAddForm(false);
+      alert("Tạo voucher thành công!");
     } catch (err) {
-      console.log("❌ Lỗi từ backend:", err.response?.data);
-      alert(err.response?.data?.message || "Không thể thêm voucher");
+      console.error("Lỗi thêm mới:", err);
+      const msg = err.response?.data?.message || "Không thể thêm voucher";
+      alert(`Thất bại: ${msg}`);
     }
   };
-  // Handle edit button click
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
+    const formatDate = (dateString) => {
+      if (!dateString) return "";
+      return new Date(dateString).toISOString().split("T")[0];
+    };
 
     setNewVoucher({
       ...voucher,
-      startDate: voucher.startDate.split("T")[0],
-      expireDate: voucher.expireDate.split("T")[0],
+      startDate: formatDate(voucher.startDate),
+      expireDate: formatDate(voucher.expireDate),
     });
 
     setShowAddForm(false);
     setShowDetail(false);
     setShowEditForm(true);
   };
-  // Handle update submit
   const handleUpdate = async (e) => {
     e.preventDefault();
 
+    if (!editingVoucher || !editingVoucher.code) {
+      alert("Lỗi hệ thống: Không tìm thấy mã voucher!");
+      return;
+    }
+
+    // Validate số âm logic
+    const discountVal = Number(newVoucher.discount);
+    const minOrderVal = Number(newVoucher.minOrderAmount);
+
+    if (discountVal < 0 || minOrderVal < 0) {
+      alert("Lỗi: Giá trị tiền không được nhỏ hơn 0!");
+      return;
+    }
+
     const data = {
-      ...newVoucher,
-      discount: Number(newVoucher.discount),
-      minOrderAmount: Number(newVoucher.minOrderAmount),
-      usageLimitPerUser: Number(newVoucher.usageLimitPerUser),
-      totalUsageLimit: Number(newVoucher.totalUsageLimit),
-      startDate: new Date(newVoucher.startDate),
-      expireDate: new Date(newVoucher.expireDate),
+      label: newVoucher.label,
+      description: newVoucher.description,
+      discount: discountVal,
+      minOrderAmount: minOrderVal,
+      startDate: newVoucher.startDate,
+      expireDate: newVoucher.expireDate,
+      status: newVoucher.status,
     };
 
     try {
@@ -130,19 +146,23 @@ const Voucher = () => {
         )
       );
       setShowEditForm(false);
-    } catch {
-      alert("Không thể cập nhật");
+      alert("Cập nhật thành công!");
+    } catch (err) {
+      console.error("Lỗi cập nhật:", err);
+      const msg = err.response?.data?.message || err.message || "Lỗi server";
+      alert(`Không thể cập nhật: ${msg}`);
     }
   };
 
   const handleDelete = async (code) => {
-    if (!window.confirm("Bạn có chắc muốn xóa voucher không?")) return;
+    if (!window.confirm("Bạn có chắc muốn xóa voucher này không?")) return;
 
     try {
-      await axios.delete(`http://localhost:3002/api/vouchers/${code}`);
+      await axios.delete(`http://localhost:3002/api/vouchers/${encodeURIComponent(code)}`);
       setVouchers(vouchers.filter((v) => v.code !== code));
-    } catch {
-      alert("Không thể xóa voucher");
+      alert("Đã xóa voucher.");
+    } catch (err) {
+      alert(err.response?.data?.message || "Không thể xóa voucher");
     }
   };
 
@@ -169,17 +189,14 @@ const Voucher = () => {
           Thêm
         </button>
       </div>
-
-      {/* table */}
       <div className="table-responsive">
         <table className="voucher-table">
           <thead>
             <tr>
               <th>Mã</th>
               <th>Tên voucher</th>
-              <th>Loại</th>
               <th>Giảm phí</th>
-              <th>Tối thiểu</th>
+              <th>Đơn tối thiểu</th>
               <th>Bắt đầu</th>
               <th>Kết thúc</th>
               <th>Trạng thái</th>
@@ -192,51 +209,42 @@ const Voucher = () => {
               <tr key={v.code}>
                 <td
                   onClick={() => handleShowDetail(v)}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", fontWeight: "bold", color: "#00DD00" }}
                 >
                   {v.code}
                 </td>
                 <td>{v.label}</td>
-                <td>Miễn phí ship</td>
-                <td>{v.discount.toLocaleString("vi-VN")}đ</td>
-                <td>{v.minOrderAmount.toLocaleString("vi-VN")}đ</td>
+                <td>{v.discount?.toLocaleString("vi-VN")}đ</td>
+                <td>{v.minOrderAmount?.toLocaleString("vi-VN")}đ</td>
                 <td>{new Date(v.startDate).toLocaleDateString("vi-VN")}</td>
                 <td>{new Date(v.expireDate).toLocaleDateString("vi-VN")}</td>
 
                 <td>
                   {(() => {
+                    if (v.status === "inactive") return <span className="status inactive">Đã khóa</span>;
+
                     const today = new Date();
                     const start = new Date(v.startDate);
                     const end = new Date(v.expireDate);
 
-                    let display = "";
-                    let cssClass = "";
-
                     if (today < start) {
-                      display = "Chưa bắt đầu";
-                      cssClass = "inactive"; // màu xám
+                      return <span className="status inactive">Chưa bắt đầu</span>;
                     } else if (today > end) {
-                      display = "Hết hạn";
-                      cssClass = "expired"; // màu đỏ
+                      return <span className="status expired">Hết hạn</span>;
                     } else {
-                      display = "Đang hoạt động";
-                      cssClass = "active"; // màu xanh
+                      return <span className="status active">Đang hoạt động</span>;
                     }
-
-                    return (
-                      <span className={`status ${cssClass}`}>{display}</span>
-                    );
                   })()}
                 </td>
                 <td>
-                  <button
-                    className="btn btn-edit"
+                  <button 
+                    className="btn btn-edit" 
                     onClick={() => handleEdit(v)}
                   >
                     Sửa
                   </button>
-                  <button
-                    className="btn btn-delete"
+                  <button 
+                    className="btn btn-delete" 
                     onClick={() => handleDelete(v.code)}
                   >
                     Xóa
@@ -244,44 +252,48 @@ const Voucher = () => {
                 </td>
               </tr>
             ))}
+            {current.length === 0 && (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center" }}>Chưa có voucher nào</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* ====================== PAGINATION ====================== */}
-      <div className="pagination">
-        {[...Array(totalPages)].map((_, i) => (
-          <button
-            key={i}
-            className={`btn btn-pagination ${
-              currentPage === i + 1 ? "active" : ""
-            }`}
-            onClick={() => setCurrentPage(i + 1)}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
-
+      {totalPages > 1 && (
+        <div className="pagination">
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              className={`btn btn-pagination ${currentPage === i + 1 ? "active" : ""}`}
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
       {showAddForm && (
         <div className="add-voucher-form">
           <div className="form-overlay" onClick={() => setShowAddForm(false)} />
 
           <form className="form-content" onSubmit={handleSubmit}>
-            <h3>Thêm voucher</h3>
+            <h3>Thêm voucher mới</h3>
 
             <div className="form-group">
-              <label>Mã voucher</label>
+              <label>Mã voucher (CODE)</label>
               <input
                 name="code"
                 value={newVoucher.code}
                 onChange={handleInputChange}
                 required
+                placeholder="VD: FREE50K"
               />
             </div>
 
             <div className="form-group">
-              <label>Tên voucher</label>
+              <label>Tên hiển thị</label>
               <input
                 name="label"
                 value={newVoucher.label}
@@ -300,78 +312,70 @@ const Voucher = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label>Giảm phí ship</label>
-              <input
-                type="number"
-                name="discount"
-                value={newVoucher.discount}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Đơn tối thiểu</label>
-              <input
-                type="number"
-                name="minOrderAmount"
-                value={newVoucher.minOrderAmount}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Giới hạn mỗi user</label>
-              <input
-                type="number"
-                name="usageLimitPerUser"
-                value={newVoucher.usageLimitPerUser}
-                onChange={handleInputChange}
-                required
-              />
+            <div className="form-row">
+              <div className="form-group">
+                <label>Giảm phí ship (VNĐ)</label>
+                <input
+                  type="number"
+                  name="discount"
+                  value={newVoucher.discount}
+                  onChange={handleInputChange}
+                  required
+                  min="0"
+                />
+              </div>
+              <div className="form-group">
+                <label>Đơn tối thiểu (VNĐ)</label>
+                <input
+                  type="number"
+                  name="minOrderAmount"
+                  value={newVoucher.minOrderAmount}
+                  onChange={handleInputChange}
+                  required
+                  min="0"
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>Tổng số lượt voucher</label>
-              <input
-                type="number"
-                name="totalUsageLimit"
-                value={newVoucher.totalUsageLimit}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Ngày bắt đầu</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={newVoucher.startDate}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Ngày bắt đầu</label>
-              <input
-                type="date"
-                name="startDate"
-                value={newVoucher.startDate || ""}
-                onChange={handleInputChange}
-              />
+              <div className="form-group">
+                <label>Ngày kết thúc</label>
+                <input
+                  type="date"
+                  name="expireDate"
+                  value={newVoucher.expireDate}
+                  min={newVoucher.startDate} // Ngày kết thúc phải sau ngày bắt đầu
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
             </div>
-
             <div className="form-group">
-              <label>Ngày kết thúc</label>
-              <input
-                type="date"
-                name="expireDate"
-                value={newVoucher.expireDate || ""}
-                min={newVoucher.startDate} // không cho nhập ngày sai hoặc trước ngày bắt đầu
-                onChange={handleInputChange}
-              />
+              <label>Trạng thái</label>
+              <select name="status" value={newVoucher.status} onChange={handleInputChange}>
+                <option value="active">Hoạt động (Active)</option>
+                <option value="inactive">Vô hiệu hóa (Inactive)</option>
+              </select>
             </div>
             <div className="form-buttons">
-              <button className="btn btn-submit">Lưu</button>
+              <button className="btn btn-submit">Lưu Voucher</button>
               <button
                 type="button"
                 className="btn btn-cancel"
                 onClick={() => setShowAddForm(false)}
               >
-                {" "}
-                Hủy{" "}
+                Hủy
               </button>
             </div>
           </form>
@@ -380,25 +384,21 @@ const Voucher = () => {
 
       {showEditForm && (
         <div className="add-voucher-form">
-          <div
-            className="form-overlay"
-            onClick={() => setShowEditForm(false)}
-          />
+          <div className="form-overlay" onClick={() => setShowEditForm(false)} />
           <form className="form-content" onSubmit={handleUpdate}>
-            <h3>Sửa voucher</h3>
-            
+            <h3>Sửa voucher: {newVoucher.code}</h3>
             <div className="form-group">
               <label>Mã voucher</label>
               <input
                 name="code"
                 value={newVoucher.code}
-                onChange={handleInputChange}
-                required
+                disabled
+                className="input-disabled"
               />
             </div>
 
             <div className="form-group">
-              <label>Nhãn</label>
+              <label>Tên hiển thị</label>
               <input
                 name="label"
                 value={newVoucher.label}
@@ -417,70 +417,63 @@ const Voucher = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label>Giảm phí ship</label>
-              <input
-                type="number"
-                name="discount"
-                value={newVoucher.discount}
-                onChange={handleInputChange}
-                required
-              />
+            <div className="form-row">
+              <div className="form-group">
+                <label>Giảm phí ship</label>
+                <input
+                  type="number"
+                  name="discount"
+                  value={newVoucher.discount}
+                  onChange={handleInputChange}
+                  required
+                  min="0"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Đơn tối thiểu</label>
+                <input
+                  type="number"
+                  name="minOrderAmount"
+                  value={newVoucher.minOrderAmount}
+                  onChange={handleInputChange}
+                  required
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Ngày bắt đầu</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={newVoucher.startDate}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Ngày kết thúc</label>
+                <input
+                  type="date"
+                  name="expireDate"
+                  value={newVoucher.expireDate}
+                  min={newVoucher.startDate}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-group">
-              <label>Đơn tối thiểu</label>
-              <input
-                type="number"
-                name="minOrderAmount"
-                value={newVoucher.minOrderAmount}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Giới hạn mỗi user</label>
-              <input
-                type="number"
-                name="usageLimitPerUser"
-                value={newVoucher.usageLimitPerUser}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Tổng số lượt voucher</label>
-              <input
-                type="number"
-                name="totalUsageLimit"
-                value={newVoucher.totalUsageLimit}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Ngày bắt đầu</label>
-              <input
-                type="date"
-                name="startDate"
-                value={newVoucher.startDate || ""}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Ngày kết thúc</label>
-              <input
-                type="date"
-                name="expireDate"
-                value={newVoucher.expireDate || ""} 
-                min={newVoucher.ẽ} // không cho nhập ngày sai hoặc trước ngày bắt đầu
-                onChange={handleInputChange}
-              />
+              <label>Trạng thái</label>
+              <select name="status" value={newVoucher.status} onChange={handleInputChange}>
+                <option value="active">Hoạt động (Active)</option>
+                <option value="inactive">Vô hiệu hóa (Inactive)</option>
+              </select>
             </div>
 
             <div className="form-buttons">
@@ -504,43 +497,17 @@ const Voucher = () => {
 
           <div className="form-content">
             <h3>Chi tiết voucher</h3>
+            <p><b>Mã:</b> {selectedVoucher.code}</p>
+            <p><b>Nhãn:</b> {selectedVoucher.label}</p>
+            <p><b>Mô tả:</b> {selectedVoucher.description}</p>
+            <p><b>Loại:</b> Vận chuyển (Shipping)</p>
+            <p><b>Giảm phí:</b> {selectedVoucher.discount?.toLocaleString("vi-VN")} đ</p>
+            <p><b>Đơn tối thiểu:</b> {selectedVoucher.minOrderAmount?.toLocaleString("vi-VN")} đ</p>
+            <p><b>Ngày bắt đầu:</b> {new Date(selectedVoucher.startDate).toLocaleDateString("vi-VN")}</p>
+            <p><b>Ngày kết thúc:</b> {new Date(selectedVoucher.expireDate).toLocaleDateString("vi-VN")}</p>
+            <p><b>Trạng thái:</b> {selectedVoucher.status === "active" ? "Hoạt động" : "Đã khóa"}</p>
 
-            <p>
-              <b>Mã:</b> {selectedVoucher.code}
-            </p>
-            <p>
-              <b>Nhãn:</b> {selectedVoucher.label}
-            </p>
-            <p>
-              <b>Mô tả:</b> {selectedVoucher.description}
-            </p>
-            <p>
-              <b>Giảm phí:</b>{" "}
-              {selectedVoucher.discount.toLocaleString("vi-VN")} đ
-            </p>
-            <p>
-              <b>Đơn tối thiểu:</b>{" "}
-              {selectedVoucher.minOrderAmount.toLocaleString("vi-VN")} đ
-            </p>
-            <p>
-              <b>Giới hạn mỗi user:</b> {selectedVoucher.usageLimitPerUser}
-            </p>
-            <p>
-              <b>Tổng lượt:</b> {selectedVoucher.totalUsageLimit}
-            </p>
-            <p>
-              <b>Ngày bắt đầu:</b>{" "}
-              {new Date(selectedVoucher.startDate).toLocaleDateString("vi-VN")}
-            </p>
-            <p>
-              <b>Ngày kết thúc:</b>{" "}
-              {new Date(selectedVoucher.expireDate).toLocaleDateString("vi-VN")}
-            </p>
-
-            <button
-              className="btn btn-cancel"
-              onClick={() => setShowDetail(false)}
-            >
+            <button className="btn btn-cancel" onClick={() => setShowDetail(false)}>
               Đóng
             </button>
           </div>
