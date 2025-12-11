@@ -41,6 +41,7 @@
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .user-table {
@@ -69,6 +70,17 @@
   color: #888;
   font-size: 0.97em;
 }
+.user-id-click {
+  cursor: pointer;
+  color: var(--color-primary);
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.user-id-click:hover {
+  text-decoration: underline;
+  color: #1565c0;
+}
 
 .role-badge {
   display: inline-block;
@@ -83,11 +95,13 @@
 .role-badge.admin {
   color: var(--color-primary);
   border-color: var(--color-primary);
+  background-color: #f0fdfa;
 }
 
 .role-badge.user {
-  color: var(--color-warning); 
-  border-color: var(--color-warning);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: #f0fdfa;
 }
 
 .loading-container {
@@ -114,12 +128,14 @@
 
 .error-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 60vh;
   color: #ff4444;
   font-size: 18px;
   font-weight: 600;
+  gap: 15px;
 }
 
 .pagination {
@@ -158,6 +174,15 @@
   cursor: not-allowed;
 }
 
+.btn-retry {
+    padding: 8px 20px;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
 .switch {
   position: relative;
   display: inline-block;
@@ -178,7 +203,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ef4444; /* đỏ = ẩn */
+  background-color: #ef4444; 
   transition: 0.3s;
   border-radius: 24px;
 }
@@ -193,14 +218,104 @@
   background-color: white;
   transition: 0.3s;
   border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .switch input:checked + .slider {
-  background-color: #10b981; /* xanh = hoạt động */
+  background-color: #10b981; 
 }
 
 .switch input:checked + .slider:before {
   transform: translateX(22px);
+}
+
+.add-product-form {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px); 
+  z-index: 1001;
+}
+
+.form-content {
+  position: relative;
+  background: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  z-index: 1002;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+  from { 
+    transform: translateY(-30px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1; 
+  }
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dashed #e5e7eb;
+  font-size: 15px;
+}
+
+.detail-item:last-of-type {
+  border-bottom: none;
+}
+
+.detail-item strong {
+  color: #4b5563; 
+  font-weight: 600;
+}
+
+.detail-item span {
+  text-align: right;
+  color: #1f2937;
+}
+
+/* Nút đóng trong modal */
+.btn-cancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.btn-cancel:hover {
+  background: #e5e7eb;
+  color: #111;
 }
 
 @media (max-width: 768px) {
@@ -233,5 +348,9 @@
     font-size: 13px;
     min-width: 36px;
   }
-}
 
+  .form-content {
+    padding: 20px;
+    width: 95%;
+  }
+}
