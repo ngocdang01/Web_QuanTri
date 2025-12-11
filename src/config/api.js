@@ -18,18 +18,22 @@ export const API_ENDPOINTS = {
     },
     CATEGORIES: {
         LIST: `${API_BASE_URL}/categories`,
+        ACTIVE: `${API_BASE_URL}/categories/active`,
         DETAIL: (id) => `${API_BASE_URL}/categories/${id}`,
         CREATE: `${API_BASE_URL}/categories/add`,
         UPDATE: (id) => `${API_BASE_URL}/categories/${id}`,
         DELETE: (id) => `${API_BASE_URL}/categories/${id}`,
+        TOGGLE_STATUS: (id) => `${API_BASE_URL}/categories/toggle/${id}`,
     },
     // Product endpoints
     PRODUCTS: {
         LIST: `${API_BASE_URL}/products`,
+        ACTIVE: `${API_BASE_URL}/products/active`,
         DETAIL: (id) => `${API_BASE_URL}/products/${id}`,
         CREATE: `${API_BASE_URL}/products/add`,
         UPDATE: (id) => `${API_BASE_URL}/products/${id}`,
         DELETE: (id) => `${API_BASE_URL}/products/${id}`,
+        TOGGLE_STATUS: (id) => `${API_BASE_URL}/products/toggle-status/${id}`,
     },
     ORDERS: {
         LIST: `${API_BASE_URL}/orders`,
@@ -139,6 +143,12 @@ export const categoryAPI = {
         });
         return handleResponse(res);
     },
+    getActiveCategories: async () => {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES.ACTIVE, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
     getCategoryById: async (id) => {
         const res = await fetch(API_ENDPOINTS.CATEGORIES.DETAIL(id), {
             headers: getHeaders()
@@ -157,6 +167,12 @@ export const categoryAPI = {
         });
         return handleResponse(res);
     },
+    toggleCategoryStatus: async (id) => {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES.TOGGLE_STATUS(id), {
+            method: 'PUT', headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
     deleteCategory: async (id) => {
         const res = await fetch(API_ENDPOINTS.CATEGORIES.DELETE(id), {
             method: 'DELETE', headers: getHeaders()
@@ -172,6 +188,13 @@ export const productAPI = {
         });
         return handleResponse(res);
     },
+    getActiveProducts: async () => {
+        const res = await fetch(API_ENDPOINTS.PRODUCTS.ACTIVE, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+
     getProductById: async (id) => {
         const res = await fetch(API_ENDPOINTS.PRODUCTS.DETAIL(id), {
             headers: getHeaders()
@@ -200,7 +223,15 @@ export const productAPI = {
             headers: getHeaders()
         });
         return handleResponse(res);
-    }
+    },
+    toggleProductStatus: async (id) => {
+    const res = await fetch(API_ENDPOINTS.PRODUCTS.TOGGLE_STATUS(id), {
+            method: 'PUT',
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+
 };
 // === ORDERS ===
 export const orderAPI = {

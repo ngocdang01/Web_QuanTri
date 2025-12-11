@@ -252,7 +252,7 @@ const Product = () => {
     setLoadingDetail(true);
     setErrorDetail(null);
     try {
-      const res = await productAPI.getProductById(id);
+      const res = await productAPI.getProductById(id + "?admin=true");
 
       setSelectedProduct(res.data || res);
     } catch (err) {
@@ -409,6 +409,18 @@ const Product = () => {
       }
     }
   };
+  // 🔥 Toggle trạng thái sản phẩm (Ẩn / Hiện)
+  const handleToggleStatus = async (id) => {
+    try {
+      await productAPI.toggleProductStatus(id);
+      await fetchProducts();
+      alert("Thay đổi trạng thái thành công!");
+    } catch (err) {
+      console.error("Toggle status error:", err);
+      alert("Không thể thay đổi trạng thái sản phẩm!");
+    }
+  };
+
 
   // Add pagination calculations
   const indexOfLastProduct = currentPage * productsPerPage;
@@ -865,83 +877,152 @@ const Product = () => {
               <th>Đã bán</th>
               <th>Mã danh mục</th>
               <th>Size</th>
+              <th>Trạng thái</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {/* Reload */}
-            {currentProducts.map((product) => (
-              <tr key={product._id} style={{ cursor: "default" }}>
-                <td>
-                  {product._id
-                    ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
-                    : ""}
-                </td>
-                <td
-                  onClick={() => handleShowDetail(product._id)}
-                  style={{ cursor: "pointer" }}
-                >
-                  {product.name || "Không có tên"}
-                </td>
-                <td>
-                  {typeof product.price === "number" && !isNaN(product.price)
-                    ? product.price.toLocaleString("vi-VN") + " VNĐ"
-                    : "N/A"}
-                </td>
-                <td
-                  onClick={() => handleShowDetail(product._id)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="product-image">
-                    <img
-                      src={
-                        product.images && product.images.length > 0
-                          ? product.images[0]
-                          : "https://via.placeholder.com/60x60?text=No+Image"
-                      }
-                      alt={product.name || "No name"}
-                    />
-                    {product.images && product.images.length > 1 && (
-                      <span className="image-count">
-                        +{product.images.length - 1}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td>{product.stock ?? "N/A"}</td>
-                <td>{product.sold ?? "0"}</td>
-                <td>{product.categoryCode || "N/A"}</td>
-                <td>
-                  {product.sizes && product.sizes.length > 0
-                    ? product.sizes
-                        .map((s) => `${s.size} (${s.quantity})`)
-                        .join(",")
-                    : "N/A"}
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button
-                      className="btn btn-edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(product);
-                      }}
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      className="btn btn-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(product._id);
-                      }}
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+           {currentProducts.map((product) => {
+  // ⭐ 1. Logic xác định trạng thái hiển thị
+  let statusLabel = "";
+  let statusClass = "";
+
+  if (product.categoryIsActive === false) {
+    statusLabel = "Ẩn (Theo danh mục)";
+    statusClass = "status-hidden-category";
+  } else if (product.isActive) {
+    statusLabel = "Hiển thị";
+    statusClass = "status-active";
+  } else {
+    statusLabel = "Đang ẩn";
+    statusClass = "status-hidden";
+  }
+
+  // ⭐ 2. Logic cảnh báo tồn kho
+  let stockStyle = {};
+  if (product.stock === 0) {
+    stockStyle = { color: "red", fontWeight: "bold" };
+  } else if (product.stock < 10) {
+    stockStyle = { color: "orange", fontWeight: "bold" };
+  }
+
+  return (
+    <tr key={product._id} style={{ cursor: "default" }}>
+      {/* Mã sản phẩm dạng rút gọn */}
+      <td>
+        {product._id
+          ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
+          : ""}
+      </td>
+
+      {/* Tên sản phẩm */}
+      <td
+        onClick={() => handleShowDetail(product._id)}
+        style={{ cursor: "pointer" }}
+      >
+        {product.name || "Không có tên"}
+      </td>
+
+      {/* Giá */}
+      <td>
+        {typeof product.price === "number" && !isNaN(product.price)
+          ? product.price.toLocaleString("vi-VN") + " VNĐ"
+          : "N/A"}
+      </td>
+
+      {/* Ảnh sản phẩm */}
+      <td
+        onClick={() => handleShowDetail(product._id)}
+        style={{ cursor: "pointer" }}
+      >
+        <div className="product-image">
+          <img
+            src={
+              product.images && product.images.length > 0
+                ? product.images[0]
+                : "https://via.placeholder.com/60x60?text=No+Image"
+            }
+            alt={product.name || "No name"}
+          />
+          {product.images && product.images.length > 1 && (
+            <span className="image-count">+{product.images.length - 1}</span>
+          )}
+        </div>
+      </td>
+
+      {/* ⭐ TỒN KHO – có cảnh báo */}
+      <td style={stockStyle}>
+        {product.stock ?? "N/A"}
+        {product.stock === 0 && <span title="Hết hàng"> ⚠️</span>}
+      </td>
+
+      {/* Đã bán */}
+      <td>{product.sold ?? "0"}</td>
+
+      {/* Mã danh mục */}
+      <td>{product.categoryCode || "N/A"}</td>
+
+      {/* Size */}
+      <td>
+        {product.sizes && product.sizes.length > 0
+          ? product.sizes
+              .map((s) => `${s.size} (${s.quantity})`)
+              .join(", ")
+          : "N/A"}
+      </td>
+
+      {/* ⭐ TRẠNG THÁI MỚI */}
+      <td>
+        <span
+          className={statusClass}
+          style={
+            statusClass === "status-hidden-category"
+              ? {
+                  background: "#fff3cd",
+                  color: "#856404",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  border: "1px solid #ffeeba",
+                }
+              : {}
+          }
+        >
+          {statusLabel}
+        </span>
+      </td>
+
+      {/* Nút thao tác */}
+      <td>
+        <div className="action-buttons">
+          <button
+            className="btn btn-edit"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(product);
+            }}
+          >
+            Sửa
+          </button>
+
+          {/* ⭐ Chỉ toggle isActive của sản phẩm */}
+          <button
+            className={`btn ${
+              product.isActive ? "btn-disable" : "btn-enable"
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleStatus(product._id);
+            }}
+          >
+            {product.isActive ? "Ẩn" : "Hiện"}
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+})}
+
           </tbody>
         </table>
       </div>
