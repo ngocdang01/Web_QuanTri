@@ -41,6 +41,27 @@ const Product = () => {
   const [errorDetail, setErrorDetail] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(5);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const getFilteredProducts = () => {
+    if (filterStatus === "low_stock") {
+      return products.filter((p) => 
+        p.sizes && p.sizes.some((s) => Number(s.quantity) < 5)
+      );
+    }
+    return products;
+  };
+  const filteredProducts = getFilteredProducts();
+  const lowStockCount = products.filter((p) => 
+    p.sizes && p.sizes.some((s) => Number(s.quantity) < 5)
+  ).length;
+
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
   // Fetch products on component mount
   useEffect(() => {
@@ -80,7 +101,6 @@ const Product = () => {
   };
   const handleImagesChange = (index, value) => {
     const clean = value.trim();
-
     const clone = [...newProduct.images];
     clone[index] = clean;
 
@@ -88,7 +108,6 @@ const Product = () => {
       alert("Ảnh đã tồn tại!");
       return;
     }
-
     setNewProduct((prev) => ({ ...prev, images: clone }));
   };
 
@@ -112,7 +131,6 @@ const Product = () => {
       const uploadedUrl = data.url.trim();
       setNewProduct((prev) => {
         let imgs = prev.images.filter((img) => img.trim() !== "");
-
         return {
           ...prev,
           images: [...imgs, uploadedUrl],
@@ -160,7 +178,6 @@ const Product = () => {
 
   const isDuplicateImage = (images, editingId = null) => {
     const publicIds = images.filter((i) => i.trim() !== "").map(getPublicId);
-
     // kiểm tra trùng trong chính form
     const set = new Set();
     for (let id of publicIds) {
@@ -181,31 +198,19 @@ const Product = () => {
     e.preventDefault();
 
     const filteredImages = newProduct.images.filter((img) => img.trim() !== "");
-
     if (Number(newProduct.price) < 0) {
       alert("Giá sản phẩm không được âm!");
       return;
     }
-
     if (isDuplicateName(newProduct.name)) {
       alert("Tên sản phẩm đã tồn tại. Vui lòng nhập tên khác!");
       return;
     }
-
-    if (isDuplicateImage(filteredImages)) {
-      alert("Hình ảnh sản phẩm đã tồn tại. Vui lòng thay đổi ảnh khác!");
-      return;
-    }
-
-    //Validate
     if (!newProduct.name.trim()) {
       alert("Vui lòng nhập tên sản phẩm!");
       return;
     }
-    if (
-      newProduct.images.length === 0 ||
-      newProduct.images.every((img) => !img.trim())
-    ) {
+    if (filteredImages.length === 0) {
       alert("Vui lòng nhập ít nhất một link hình ảnh!");
       return;
     }
@@ -217,30 +222,30 @@ const Product = () => {
       alert("Vui lòng nhập mô tả sản phẩm!");
       return;
     }
-    try {
-      // Filter out empty image URLs
-      const filteredImages = newProduct.images.filter(
-        (img) => img.trim() !== ""
-      );
-      if (isDuplicateImage(filteredImages)) {
-        alert("Ảnh đã tồn tại. Không thể thêm sản phẩm!");
-        return;
-      }
+    
+    // Check trùng ảnh
+    if (isDuplicateImage(filteredImages)) {
+      alert("Hình ảnh sản phẩm đã tồn tại. Vui lòng thay đổi ảnh khác!");
+      return;
+    }
 
-      newProduct.stock = newProduct.size_items.reduce(
-        (acc, item) => acc + item.quantity,
-        0
+    try {
+      const stockCount = newProduct.size_items.reduce(
+        (acc, item) => acc + Number(item.quantity), 0
       );
-      // Chuyển đổi price và stock thành số
       const productData = {
         ...newProduct,
         price: Number(newProduct.price),
+        stock: stockCount,
         sold: Number(newProduct.sold || 0),
         images: filteredImages,
+        isActive: true,
+        sizes: newProduct.size_items 
       };
 
-      await productAPI.createProduct(productData);
-      fetchProducts();
+      const res = await productAPI.createProduct(productData);
+      const createdProduct = res.data || res; 
+      setProducts((prev) => [createdProduct, ...prev]);
       setShowAddForm(false);
       setNewProduct({
         name: "",
@@ -254,9 +259,7 @@ const Product = () => {
       });
       alert("Thêm sản phẩm thành công!");
     } catch (err) {
-      alert(
-        "Không thể thêm sản phẩm: " + (err.message || "Lỗi không xác định")
-      );
+      alert("Không thể thêm sản phẩm: " + (err.message || "Lỗi không xác định"));
       console.error("Error adding product:", err);
     }
   };
@@ -268,7 +271,6 @@ const Product = () => {
     setErrorDetail(null);
     try {
       const res = await productAPI.getProductById(id + "?admin=true");
-
       setSelectedProduct(res.data || res);
     } catch (err) {
       setErrorDetail("Không thể tải chi tiết sản phẩm");
@@ -287,8 +289,7 @@ const Product = () => {
       stock: product.stock || 0,
       sold: product.sold || "",
       description: product.description || "",
-      images:
-      product.images && product.images.length > 0 ? product.images : [""],
+      images: product.images && product.images.length > 0 ? product.images : [""],
       size_items: product.sizes
         ? product.sizes.map(s => ({
             size: s.size,
@@ -307,15 +308,11 @@ const Product = () => {
       alert("Giá sản phẩm không được âm!");
       return;
     }
-
     if (!newProduct.name.trim()) {
       alert("Vui lòng nhập tên sản phẩm!");
       return;
     }
-    if (
-      newProduct.images.length === 0 ||
-      newProduct.images.every((img) => !img.trim())
-    ) {
+    if (newProduct.images.length === 0 || newProduct.images.every((img) => !img.trim())) {
       alert("Vui lòng nhập ít nhất một link hình ảnh!");
       return;
     }
@@ -327,34 +324,35 @@ const Product = () => {
       alert("Vui lòng nhập mô tả sản phẩm!");
       return;
     }
-    if (isDuplicateImage(newProduct.images, editingProduct._id)) {
+    
+    const filteredImages = newProduct.images.filter((img) => img.trim() !== "");
+    if (isDuplicateImage(filteredImages, editingProduct._id)) {
       alert("Ảnh đã tồn tại ở sản phẩm khác hoặc trùng trong chính sản phẩm!");
       return;
     }
 
     try {
-      // Filter out empty image URLs
-      const filteredImages = newProduct.images.filter(
-        (img) => img.trim() !== ""
-      );
-      if (isDuplicateImage(newProduct.images, editingProduct._id)) {
-        alert("Ảnh đã tồn tại ở sản phẩm khác!");
-        return;
-      }
-      newProduct.stock = newProduct.size_items.reduce(
-        (acc, item) => acc + item.quantity,
-        0
+      const updatedStock = newProduct.size_items.reduce(
+        (acc, item) => acc + Number(item.quantity), 0
       );
       const productData = {
         ...newProduct,
         price: Number(newProduct.price),
+        stock: updatedStock,
         sold: Number(newProduct.sold || 0),
         images: filteredImages,
+        sizes: newProduct.size_items 
       };
 
       await productAPI.updateProduct(editingProduct._id, productData);
+      setProducts((prevProducts) =>
+        prevProducts.map((p) =>
+          p._id === editingProduct._id
+            ? { ...p, ...productData } 
+            : p
+        )
+      );
 
-      await fetchProducts();
       setShowEditForm(false);
       setEditingProduct(null);
       setNewProduct({
@@ -369,32 +367,26 @@ const Product = () => {
       });
       alert("Cập nhật sản phẩm thành công!");
     } catch (err) {
-      alert(
-        "Không thể cập nhật sản phẩm: " + (err.message || "Lỗi không xác định")
-      );
+      alert("Không thể cập nhật sản phẩm: " + (err.message || "Lỗi không xác định"));
       console.error("Error updating product:", err);
     }
   };
 
   const handleSizeToggle = (size, checked) => {
-  setNewProduct((prev) => {
-    let updated = [...prev.size_items];
-
-    if (checked) {
-      updated.push({ size, quantity: ""});
-    } else {
-      updated = updated.filter((s) => s.size !== size);
-    }
-
-    const totalStock = updated.reduce(
-      (sum, item) => sum + Number(item.quantity || 0),
-      0
-    );
-
-    return { ...prev, size_items: updated, stock: totalStock };
-  });
-};
-
+    setNewProduct((prev) => {
+      let updated = [...prev.size_items];
+      if (checked) {
+        updated.push({ size, quantity: ""});
+      } else {
+        updated = updated.filter((s) => s.size !== size);
+      }
+      const totalStock = updated.reduce(
+        (sum, item) => sum + Number(item.quantity || 0),
+        0
+      );
+      return { ...prev, size_items: updated, stock: totalStock };
+    });
+  };
 
   const handleSizeQuantityChange = (size, quantity) => {
     setNewProduct((prev) => {
@@ -403,19 +395,14 @@ const Product = () => {
           ? { ...s, quantity: quantity === "" ? "" : Number(quantity) }
           : s
       );
-
       const totalStock = updated.reduce(
         (sum, item) => sum + (Number(item.quantity) || 0),
         0
       );
-
       return { ...prev, size_items: updated, stock: totalStock };
     });
   };
 
-
-
-  // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     try {
@@ -432,7 +419,6 @@ const Product = () => {
     }
   };
 
-  // Delete product
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
       try {
@@ -445,27 +431,22 @@ const Product = () => {
       }
     }
   };
-  // 🔥 Toggle trạng thái sản phẩm (Ẩn / Hiện)
   const handleToggleStatus = async (id) => {
     try {
       await productAPI.toggleProductStatus(id);
-      await fetchProducts();
-      alert("Thay đổi trạng thái thành công!");
+      setProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === id
+            ? { ...product, isActive: !product.isActive }
+            : product
+        )
+      );
     } catch (err) {
       console.error("Toggle status error:", err);
       alert("Không thể thay đổi trạng thái sản phẩm!");
+      fetchProducts();
     }
   };
-
-
-  // Add pagination calculations
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = products.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
-  );
-  const totalPages = Math.ceil(products.length / productsPerPage);
 
   // Add pagination handlers
   const handlePageChange = (pageNumber) => {
@@ -480,6 +461,26 @@ const Product = () => {
         <h2>Quản lý sản phẩm</h2>
         <button className="btn btn-add" onClick={handleOpenAddForm}>
           Thêm
+        </button>
+      </div>
+      <div className="filter-bar">
+        <button
+          className={`filter-btn ${filterStatus === "all" ? "active" : ""}`}
+          onClick={() => { setFilterStatus("all"); setCurrentPage(1); }}
+        >
+          Tất cả
+        </button>
+        
+        <button
+          className={`filter-btn ${filterStatus === "low_stock" ? "active" : ""}`}
+          onClick={() => { setFilterStatus("low_stock"); setCurrentPage(1); }}
+        >
+          Cảnh báo nhập hàng (Size {'<'} 5)
+          {lowStockCount > 0 && (
+            <span className="warning-count" style={{ background: '#ff9800' }}>
+              {lowStockCount}
+            </span>
+          )}
         </button>
       </div>
       {/* Modal Thêm sản phẩm */}
@@ -943,152 +944,124 @@ const Product = () => {
             </tr>
           </thead>
           <tbody>
-            {/* Reload */}
-           {currentProducts.map((product) => {
-  // ⭐ 1. Logic xác định trạng thái hiển thị
-  let statusLabel = "";
-  let statusClass = "";
+            {currentProducts.map((product) => {
+              let stockStyle = {};
+              if (product.stock === 0) {
+                stockStyle = { color: "red", fontWeight: "bold" };
+              } else if (product.stock < 10) {
+                stockStyle = { color: "orange", fontWeight: "bold" };
+              }
 
-  if (product.categoryIsActive === false) {
-    statusLabel = "Ẩn (Theo danh mục)";
-    statusClass = "status-hidden-category";
-  } else if (product.isActive) {
-    statusLabel = "Hiển thị";
-    statusClass = "status-active";
-  } else {
-    statusLabel = "Đang ẩn";
-    statusClass = "status-hidden";
-  }
+              return (
+                <tr key={product._id}>
+                  <td>
+                    {product._id
+                      ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
+                      : ""}
+                  </td>
+                  <td
+                    onClick={() => handleShowDetail(product._id)}
+                    style={{ cursor: "pointer", fontWeight: "500" }}
+                  >
+                    {product.name || "Không có tên"}
+                  </td>
+                  <td>
+                    {typeof product.price === "number" && !isNaN(product.price)
+                      ? product.price.toLocaleString("vi-VN") + " VNĐ"
+                      : "N/A"}
+                  </td>
+                  <td
+                    onClick={() => handleShowDetail(product._id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="product-image">
+                      <img
+                        src={
+                          product.images && product.images.length > 0
+                            ? product.images[0]
+                            : "https://via.placeholder.com/60x60?text=No+Image"
+                        }
+                        alt={product.name || "No name"}
+                      />
+                      {product.images && product.images.length > 1 && (
+                        <span className="image-count">
+                          +{product.images.length - 1}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ fontWeight: "600", fontSize: "1.05rem" }}>
+                      {product.stock ?? 0}
+                    </span>
+                  </td>
 
-  // ⭐ 2. Logic cảnh báo tồn kho
-  let stockStyle = {};
-  if (product.stock === 0) {
-    stockStyle = { color: "red", fontWeight: "bold" };
-  } else if (product.stock < 10) {
-    stockStyle = { color: "orange", fontWeight: "bold" };
-  }
+                  <td>{product.sold ?? "0"}</td>
+                  <td>{product.categoryCode || "N/A"}</td>
+                  <td>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", maxWidth: "220px" }}>
+                      {product.sizes && product.sizes.length > 0 ? (
+                        product.sizes.map((s, idx) => {
+                          const quantity = Number(s.quantity);
+                          let statusClass = "";
+                          if (quantity === 0) statusClass = "out-stock"; 
+                          else if (quantity < 5) statusClass = "low-stock"; 
 
-  return (
-    <tr key={product._id} style={{ cursor: "default" }}>
-      {/* Mã sản phẩm dạng rút gọn */}
-      <td>
-        {product._id
-          ? `${product._id.slice(0, 1)}...${product._id.slice(-4)}`
-          : ""}
-      </td>
+                          return (
+                            <span
+                              key={idx}
+                              className={`size-tag ${statusClass}`}
+                              title={quantity === 0 ? "Hết hàng" : quantity < 5 ? "Sắp hết" : "Còn hàng"}
+                            >
+                              {s.size}: <b>{quantity}</b>
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span style={{ color: '#999' }}>N/A</span>
+                      )}
+                    </div>
+                  </td>
 
-      {/* Tên sản phẩm */}
-      <td
-        onClick={() => handleShowDetail(product._id)}
-        style={{ cursor: "pointer" }}
-      >
-        {product.name || "Không có tên"}
-      </td>
-
-      {/* Giá */}
-      <td>
-        {typeof product.price === "number" && !isNaN(product.price)
-          ? product.price.toLocaleString("vi-VN") + " VNĐ"
-          : "N/A"}
-      </td>
-
-      {/* Ảnh sản phẩm */}
-      <td
-        onClick={() => handleShowDetail(product._id)}
-        style={{ cursor: "pointer" }}
-      >
-        <div className="product-image">
-          <img
-            src={
-              product.images && product.images.length > 0
-                ? product.images[0]
-                : "https://via.placeholder.com/60x60?text=No+Image"
-            }
-            alt={product.name || "No name"}
-          />
-          {product.images && product.images.length > 1 && (
-            <span className="image-count">+{product.images.length - 1}</span>
-          )}
-        </div>
-      </td>
-
-      {/* ⭐ TỒN KHO – có cảnh báo */}
-      <td style={stockStyle}>
-        {product.stock ?? "N/A"}
-        {product.stock === 0 && <span title="Hết hàng"> ⚠️</span>}
-      </td>
-
-      {/* Đã bán */}
-      <td>{product.sold ?? "0"}</td>
-
-      {/* Mã danh mục */}
-      <td>{product.categoryCode || "N/A"}</td>
-
-      {/* Size */}
-      <td>
-        {product.sizes && product.sizes.length > 0
-          ? product.sizes
-              .map((s) => `${s.size} (${s.quantity})`)
-              .join(", ")
-          : "N/A"}
-      </td>
-
-      {/* ⭐ TRẠNG THÁI MỚI */}
-      <td>
-        <span
-          className={statusClass}
-          style={
-            statusClass === "status-hidden-category"
-              ? {
-                  background: "#fff3cd",
-                  color: "#856404",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  border: "1px solid #ffeeba",
-                }
-              : {}
-          }
-        >
-          {statusLabel}
-        </span>
-      </td>
-
-      {/* Nút thao tác */}
-      <td>
-        <div className="action-buttons">
-          <button
-            className="btn btn-edit"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(product);
-            }}
-          >
-            Sửa
-          </button>
-
-          {/* ⭐ Chỉ toggle isActive của sản phẩm */}
-          <button
-            className={`btn ${
-              product.isActive ? "btn-disable" : "btn-enable"
-            }`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleStatus(product._id);
-            }}
-          >
-            {product.isActive ? "Ẩn" : "Hiện"}
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-})}
-
+                  <td>
+                    {product.categoryIsActive === false ? (
+                      <span className="product-status-category">
+                        Danh mục đang ẩn
+                      </span>
+                    ) : (
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={product.isActive}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleToggleStatus(product._id);
+                          }}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    )}
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-edit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(product);
+                        }}
+                      >
+                        Sửa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Add pagination controls */}
       <div className="pagination">
         <button
           className="btn btn-pagination"

@@ -40,10 +40,10 @@ const AdminCategories = () => {
     setNewCategory((prev) => ({ ...prev, [name]: value }));
   };
   const openAddForm = () => {
-    setNewCategory({ 
-      name: "", 
-      code: "", 
-      image: "" ,
+    setNewCategory({
+      name: "",
+      code: "",
+      image: "",
     });
     setShowAddForm(true);
   };
@@ -68,9 +68,7 @@ const AdminCategories = () => {
       return false;
     }
 
-    const duplicateImage = categories.some(
-      (c) => c.image.trim() === image
-    );
+    const duplicateImage = categories.some((c) => c.image.trim() === image);
     if (duplicateImage) {
       alert("Hình ảnh danh mục đã tồn tại!");
       return false;
@@ -107,7 +105,6 @@ const AdminCategories = () => {
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validate
     if (!newCategory.name.trim()) {
       alert("Vui lòng nhập tên danh mục!");
       return;
@@ -124,19 +121,16 @@ const AdminCategories = () => {
     if (!validateCreate()) return;
 
     try {
-      await categoryAPI.createCategory(newCategory);
-      fetchCategories();
+      const res = await categoryAPI.createCategory(newCategory);
+      const createdCategory = res.data || res;
+      setCategories((prev) => [createdCategory, ...prev]);
       setShowAddForm(false);
       alert("Thêm danh mục thành công!");
     } catch (err) {
       alert("Không thể thêm danh mục!");
     }
   };
-
-
-  // ======================
-  // UPDATE CATEGORY
-  // ======================
+  // Update category
   const handleEdit = (category) => {
     setEditingCategory(category);
     setNewCategory({
@@ -206,18 +200,19 @@ const AdminCategories = () => {
 
     try {
       await categoryAPI.updateCategory(editingCategory._id, newCategory);
-      fetchCategories();
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat._id === editingCategory._id
+            ? { ...cat, ...newCategory }
+            : cat
+        )
+      );
       setShowEditForm(false);
       alert("Cập nhật danh mục thành công!");
     } catch (err) {
       alert("Không thể cập nhật danh mục!");
     }
   };
-
-
-  // ======================
-  // SHOW DETAIL
-  // ======================
   const handleShowDetail = async (id) => {
     try {
       const res = await categoryAPI.getCategoryById(id);
@@ -227,22 +222,21 @@ const AdminCategories = () => {
       alert("Không thể tải chi tiết danh mục!");
     }
   };
-
-  // ======================
-  // TOGGLE STATUS (ẨN / HIỆN)
-  // ======================
   const handleToggleStatus = async (id) => {
     try {
       await categoryAPI.toggleCategoryStatus(id);
-      fetchCategories();
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat._id === id ? { ...cat, isActive: !cat.isActive } : cat
+        )
+      );
     } catch (err) {
+      console.error(err);
       alert("Không thể thay đổi trạng thái danh mục!");
+      fetchCategories();
     }
   };
 
-  // ======================
-  // FORMAT DATE
-  // ======================
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     try {
@@ -252,20 +246,12 @@ const AdminCategories = () => {
       return "N/A";
     }
   };
-
-  // ======================
-  // PAGINATION
-  // ======================
   const indexLast = currentPage * categoriesPerPage;
   const indexFirst = indexLast - categoriesPerPage;
   const currentCategories = categories.slice(indexFirst, indexLast);
   const totalPages = Math.ceil(categories.length / categoriesPerPage);
 
-  // ======================
-  // RENDER
-  // ======================
-
-  if (loading) return <div>Đang tải...</div>;
+  if (loading) return <div className="loading">Đang tải...</div>;
 
   return (
     <div className="product-container">
@@ -286,7 +272,6 @@ const AdminCategories = () => {
 
           <form onSubmit={handleSubmit} className="form-content">
             <h3>Thêm danh mục mới</h3>
-
             <div className="form-group">
               <label>Tên danh mục:</label>
               <input
@@ -296,7 +281,6 @@ const AdminCategories = () => {
                 required
               />
             </div>
-
             <div className="form-group">
               <label>Mã danh mục:</label>
               <input
@@ -306,7 +290,6 @@ const AdminCategories = () => {
                 required
               />
             </div>
-
             <div className="form-group">
               <label>Hình ảnh:</label>
               <input
@@ -316,15 +299,14 @@ const AdminCategories = () => {
                 placeholder="Link ảnh..."
                 required
               />
-
               <button
                 type="button"
                 className="btn btn-add-image"
+                style={{marginTop: '10px'}}
                 onClick={() => fileInputRef.current.click()}
               >
                 📁 Chọn ảnh từ máy
               </button>
-
               <input
                 type="file"
                 ref={fileInputRef}
@@ -333,7 +315,6 @@ const AdminCategories = () => {
                 onChange={handleSelectImageFromPC}
               />
             </div>
-
             <div className="form-buttons">
               <button className="btn btn-submit">Lưu</button>
               <button
@@ -358,7 +339,6 @@ const AdminCategories = () => {
 
           <form onSubmit={handleUpdate} className="form-content">
             <h3>Sửa danh mục</h3>
-
             <div className="form-group">
               <label>Tên danh mục:</label>
               <input
@@ -368,7 +348,6 @@ const AdminCategories = () => {
                 required
               />
             </div>
-
             <div className="form-group">
               <label>Mã danh mục:</label>
               <input
@@ -378,7 +357,6 @@ const AdminCategories = () => {
                 required
               />
             </div>
-
             <div className="form-group">
               <label>Hình ảnh:</label>
               <input
@@ -387,15 +365,14 @@ const AdminCategories = () => {
                 onChange={handleInputChange}
                 required
               />
-
               <button
                 type="button"
                 className="btn btn-add-image"
+                style={{marginTop: '10px'}}
                 onClick={() => fileInputRef.current.click()}
               >
                 📁 Chọn ảnh từ máy
               </button>
-
               <input
                 type="file"
                 ref={fileInputRef}
@@ -404,7 +381,6 @@ const AdminCategories = () => {
                 onChange={handleSelectImageFromPC}
               />
             </div>
-
             <div className="form-buttons">
               <button className="btn btn-submit">Cập nhật</button>
               <button
@@ -437,52 +413,51 @@ const AdminCategories = () => {
 
           <tbody>
             {currentCategories.map((category) => (
-              <tr key={category._id}
+              <tr
+                key={category._id}
                 onClick={() => handleShowDetail(category._id)}
-                style={{ cursor: "pointer"}}
+                style={{ cursor: "pointer" }}
               >
                 <td>{category._id.slice(0, 6)}...</td>
                 <td>{category.name}</td>
                 <td>{category.code}</td>
                 <td>
-                  <img
-                    src={category.image}
-                    alt="img"
-                    style={{
-                      width: 60,
-                      height: 60,
-                      objectFit: "cover",
-                      borderRadius: 6,
-                    }}
-                  />
+                  <div className="product-image">
+                    <img
+                      src={category.image}
+                      alt="img"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: "cover",
+                        borderRadius: 6,
+                      }}
+                    />
+                  </div>
                 </td>
-                <td>
-                  {category.isActive ? (
-                    <span className="status-active">Hiển thị</span>
-                  ) : (
-                    <span className="status-hidden">Đang ẩn</span>
-                  )}
+                <td onClick={(e) => e.stopPropagation()}>
+                    <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={category.isActive}
+                          onChange={() => handleToggleStatus(category._id)}
+                        />
+                        <span className="slider"></span>
+                    </label>
                 </td>
+
                 <td>{formatDate(category.createdAt)}</td>
                 <td>{formatDate(category.updatedAt)}</td>
-                <td
-                  onClick={(e) => e.stopPropagation()}
-                  style={{ display: "flex", gap: "8px" }}
-                >
-                  <button
-                    className="btn btn-edit"
-                    onClick={() => handleEdit(category)}
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    className={`btn ${
-                      category.isActive ? "btn-disable" : "btn-enable"
-                    }`}
-                    onClick={() => handleToggleStatus(category._id)}
-                  >
-                    {category.isActive ? "Ẩn" : "Hiện"}
-                  </button>
+
+                <td onClick={(e) => e.stopPropagation()}>
+                    <div className="action-buttons">
+                        <button
+                            className="btn btn-edit"
+                            onClick={() => handleEdit(category)}
+                        >
+                            Sửa
+                        </button>
+                    </div>
                 </td>
               </tr>
             ))}
@@ -524,21 +499,27 @@ const AdminCategories = () => {
           ></div>
           <div className="form-content">
             <h3>Chi tiết danh mục</h3>
-            <img
-              src={selectedCategory.image}
-              alt=""
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 10,
-                marginBottom: 15,
-              }}
-            />
+            <div style={{display: 'flex', justifyContent: 'center', marginBottom: '15px'}}>
+                 <img
+                  src={selectedCategory.image}
+                  alt=""
+                  style={{
+                    width: 150,
+                    height: 150,
+                    borderRadius: 12,
+                    objectFit: 'cover',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+                  }}
+                />
+            </div>
             <p>
               <b>Tên:</b> {selectedCategory.name}
             </p>
             <p>
               <b>Mã:</b> {selectedCategory.code}
+            </p>
+            <p>
+              <b>Trạng thái:</b> {selectedCategory.isActive ? "Đang hiển thị" : "Đang ẩn"}
             </p>
             <p>
               <b>Ngày tạo:</b> {formatDate(selectedCategory.createdAt)}
@@ -547,12 +528,14 @@ const AdminCategories = () => {
               <b>Cập nhật:</b> {formatDate(selectedCategory.updatedAt)}
             </p>
 
-            <button
-              className="btn btn-cancel"
-              onClick={() => setShowDetail(false)}
-            >
-              Đóng
-            </button>
+            <div style={{textAlign: 'right', marginTop: '20px'}}>
+                <button
+                  className="btn btn-cancel"
+                  onClick={() => setShowDetail(false)}
+                >
+                  Đóng
+                </button>
+            </div>
           </div>
         </div>
       )}

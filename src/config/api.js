@@ -63,6 +63,7 @@ export const API_ENDPOINTS = {
         CREATE: `${API_BASE_URL}/sale-products/add`,
         UPDATE: (id) => `${API_BASE_URL}/sale-products/${id}`,
         DELETE: (id) => `${API_BASE_URL}/sale-products/${id}`,
+        TOGGLE_STATUS: (id) => `${API_BASE_URL}/sale-products/toggle-status/${id}`,
         UPDATE_DISCOUNT_STATUS: (id) => `${API_BASE_URL}/sale-products/${id}/discount-status`,
         UPDATE_SOLD_COUNT: (id) => `${API_BASE_URL}/sale-products/${id}/sold`,
     }
@@ -334,6 +335,13 @@ export const bannerAPI = {
 export const saleProductAPI = {
     getAllSaleProducts: async () => {
         const res = await fetch(API_ENDPOINTS.SALE_PRODUCTS.LIST, {
+            headers: getHeaders()
+        });
+        return handleResponse(res);
+    },
+    toggleSaleProductStatus: async (id) => {
+        const res = await fetch(API_ENDPOINTS.SALE_PRODUCTS.TOGGLE_STATUS(id), {
+            method: 'PUT',
             headers: getHeaders()
         });
         return handleResponse(res);
