@@ -8,6 +8,7 @@ import '../styles/Home.css';
 import Voucher from './voucher';
 import AdminCategories from './AdminCategories';
 import logo from '../assets/Logo-Cool-Mate_final.jpg';
+import SaleProducts from './SaleProduct';
 
 const Home = () => {
   const [tab, setTab] = useState('dashboard');
@@ -25,6 +26,7 @@ const Home = () => {
           <li className={tab==='banner' ? 'active' : ''} onClick={()=>setTab('banner')}>Quản lý Banner</li>
           <li className={tab==='voucher' ? 'active' : ''} onClick={()=>setTab('voucher')}>Quản lý voucher</li>
           <li className={tab==='orders' ? 'active' : ''} onClick={()=>setTab('orders')}>Quản lý đơn hàng</li>
+          <li className={tab==='sale_products' ? 'active' : ''} onClick={()=>setTab('sale_products')}>Sản phẩm giảm giá</li>
         </ul>
       </aside>
 
@@ -36,6 +38,7 @@ const Home = () => {
         {tab === 'orders' && <Order />}
         {tab === 'voucher' && <Voucher />}
         {tab === 'banner' && <Banner />}
+        {tab === 'sale_products' && <SaleProducts />}
       </main>
     </div>
   );

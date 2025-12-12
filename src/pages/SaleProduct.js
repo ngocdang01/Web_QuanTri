@@ -1,0 +1,786 @@
+import React, { useState, useEffect } from "react";
+import { saleProductAPI } from "../config/api";
+import "../styles/SaleProduct.css";
+
+const SaleProducts = () => {
+  const [saleProducts, setSaleProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [newSaleProduct, setNewSaleProduct] = useState({
+    name: "",
+    price: 0,
+    discount_percent: 0,
+    discount_price: 0,
+    stock: 0,
+    sold: 0,
+    description: "",
+    images: [""], 
+    size_items: [],
+    categoryCode: "",
+  });
+
+  useEffect(() => {
+    fetchSaleProducts();
+  }, []);
+
+  const fetchSaleProducts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await saleProductAPI.getAllSaleProducts();
+      // Ensure all products have required fields with default values
+      const formattedData = data.map((product) => ({
+        ...product,
+        price: product.price || 0,
+        discount_price: product.discount_price || 0,
+        discount_percent: product.discount_percent || 0,
+        stock: product.stock || 0,
+        sold: product.sold || 0,
+        sizes: Array.isArray(product.sizes) ? product.sizes : [],
+        images: Array.isArray(product.images) ? product.images : [],
+      }));
+      setSaleProducts(formattedData);
+    } catch (error) {
+      console.error("Error fetching sale products:", error);
+      setError(error.message || "Có lỗi xảy ra khi tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaleImagesChange = (index, value) => {
+    setNewSaleProduct((prev) => {
+      const newImages = [...prev.images];
+      newImages[index] = value;
+      return { ...prev, images: newImages };
+    });
+  };
+
+  const addSaleImageField = () => {
+    setNewSaleProduct((prev) => ({
+      ...prev,
+      images: [...prev.images, ""],
+    }));
+  };
+
+  const removeSaleImageField = (index) => {
+    setNewSaleProduct((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleEdit = (product) => {
+  setEditingProduct(product);
+
+  setNewSaleProduct({
+    ...product,
+    images:
+      Array.isArray(product.images) && product.images.length > 0
+        ? product.images
+        : [""],
+
+    // GIỮ NGUYÊN size_items từ product.sizes backend trả về
+    size_items: Array.isArray(product.sizes)
+      ? product.sizes.map((s) => ({
+          size: s.size,
+          quantity: s.quantity
+        }))
+      : [],
+  });
+
+  setShowForm(true);
+};
+
+
+  const handleDelete = async (productId) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
+      try {
+        await saleProductAPI.deleteSaleProduct(productId);
+        setSaleProducts(saleProducts.filter((p) => p._id !== productId));
+        alert("Xóa sản phẩm thành công!");
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        alert(error.message || "Có lỗi xảy ra khi xóa sản phẩm!");
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    console.log("Form data entries:");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+
+    // Validate required fields
+    const name = formData.get("name")?.trim();
+    const price = parseInt(formData.get("price"));
+    const discountPercent = parseInt(formData.get("discount_percent"));
+    const stock = newSaleProduct.size_items.reduce(
+      (acc, item) => acc + item.quantity,
+      0
+    );
+    const sold = parseInt(formData.get("sold"));
+    const description = formData.get("description")?.trim();
+    const validImages = newSaleProduct.images.filter(
+      (img) => img.trim() !== ""
+    );
+    const categoryCode = formData.get("categoryCode")?.trim();
+    const size_items = newSaleProduct.size_items;
+
+    // Debug: Log individual field values
+    console.log("Field values:", {
+      name,
+      price,
+      discountPercent,
+      stock,
+      sold,
+      description,
+      validImages,
+      size_items,
+      categoryCode,
+    });
+
+    // Check for required fields with specific error messages
+    const missingFields = [];
+    if (!name) missingFields.push("Tên sản phẩm");
+    if (!price) missingFields.push("Giá gốc");
+    if (!discountPercent) missingFields.push("Phần trăm giảm giá");
+    if (!description) missingFields.push("Mô tả");
+    if (!validImages) missingFields.push("Hình ảnh");
+    if (size_items.length === 0) missingFields.push("Kích thước");
+    if (!categoryCode) missingFields.push("Mã danh mục");
+
+    if (missingFields.length > 0) {
+      missingFields.forEach((field) => {
+        const fieldName = field.toLowerCase().replace(/\s+/g, "");
+        const input = document.querySelector(
+          `input[name="${fieldName}"], textarea[name="${fieldName}"]`
+        );
+        if (input) {
+          input.style.borderColor = "#ff6b6b";
+          input.style.backgroundColor = "#fff5f5";
+        }
+      });
+
+      alert(`Vui lòng nhập đầy đủ thông tin: ${missingFields.join(", ")}`);
+      return;
+    }
+
+    // Validate numeric fields
+    if (
+      price <= 0 ||
+      discountPercent < 0 ||
+      discountPercent > 100 ||
+      stock < 0 ||
+      sold < 0
+    ) {
+      alert("Vui lòng kiểm tra lại các giá trị số");
+      return;
+    }
+    // Kiểm tra từng size phải > 0
+    for (const item of size_items) {
+      if (item.quantity <= 0) {
+        alert(`Số lượng size ${item.size} phải lớn hơn 0`);
+        return;
+      }
+    }
+    // Kiểm tra từng size phải nhập số lượng > 0
+    for (const item of size_items) {
+      if (!item.quantity || Number(item.quantity) <= 0) {
+        alert(`Vui lòng nhập số lượng cho size ${item.size}`);
+        return;
+      }
+    }
+    const productData = {
+      name,
+      price,
+      discount_percent: discountPercent,
+      stock,
+      sold: sold ?? 0,
+      description,
+      images: validImages, // 👈 lấy nhiều ảnh
+      size_items,
+      categoryCode,
+    };
+
+    try {
+      console.log("Sending product data:", productData);
+
+      if (editingProduct) {
+        const updatedProduct = await saleProductAPI.updateSaleProduct(
+          editingProduct._id,
+          productData
+        );
+        setSaleProducts(
+          saleProducts.map((p) =>
+            p._id === editingProduct._id
+        ? {
+            ...updatedProduct,
+            price: updatedProduct.price || 0,
+            discount_price: updatedProduct.discount_price || 0,
+            discount_percent: updatedProduct.discount_percent || 0,
+            stock: updatedProduct.stock || 0,
+            sold: updatedProduct.sold || 0,
+
+            // thêm vào:
+            sizes: updatedProduct.sizes || size_items,
+            size_items,
+            images: Array.isArray(updatedProduct.images)
+              ? updatedProduct.images
+              : [],
+          }
+        : p
+
+          )
+        );
+      } else {
+        // Add new product
+        const newProduct = await saleProductAPI.createSaleProduct(productData);
+        setSaleProducts([
+          ...saleProducts,
+          {
+            ...newProduct,
+            price: newProduct.price || 0,
+            discount_price: newProduct.discount_price || 0,
+            discount_percent: newProduct.discount_percent || 0,
+            stock: newProduct.stock || 0,
+            sold: newProduct.sold || 0,
+            sizes: size_items,
+            images: Array.isArray(newProduct.images) ? newProduct.images : [],
+          },
+        ]);
+      }
+
+      setShowForm(false);
+      setEditingProduct(null);
+      e.target.reset();
+      alert(
+        editingProduct
+          ? "Cập nhật sản phẩm thành công!"
+          : "Thêm sản phẩm thành công!"
+      );
+    } catch (error) {
+      console.error("Error saving product:", error);
+      alert(error.message || "Có lỗi xảy ra khi lưu sản phẩm!");
+    }
+  };
+
+  const handleSizeToggle = (size, checked) => {
+    setNewSaleProduct((prev) => {
+      let updated = [...prev.size_items];
+
+      if (checked) {
+        updated.push({ size, quantity: "" });
+      } else {
+        updated = updated.filter((s) => s.size !== size);
+      }
+
+      return { ...prev, size_items: updated };
+    });
+  };
+
+  const handleSizeQuantityChange = (size, quantity) => {
+    if (quantity === "") {
+      setNewSaleProduct(prev => ({
+        ...prev,
+        size_items: prev.size_items.map(s =>
+          s.size === size ? { ...s, quantity: "" } : s
+        )
+      }));
+      return;
+    }
+    const num = Number(quantity);
+    if (num < 1) return; 
+      setNewSaleProduct((prev) => ({
+        ...prev,
+        size_items: prev.size_items.map((s) =>
+          s.size === size ? { ...s, quantity: num } : s
+        ),
+      }));
+  };
+
+  const handleUpdateSoldCount = async (productId, currentSold) => {
+    const newSoldCount = prompt("Nhập số lượng đã bán mới:", currentSold);
+    if (newSoldCount !== null && !isNaN(newSoldCount)) {
+      try {
+        await saleProductAPI.updateSoldCount(productId, parseInt(newSoldCount));
+        setSaleProducts(
+          saleProducts.map((p) =>
+            p._id === productId ? { ...p, sold: parseInt(newSoldCount) } : p
+          )
+        );
+        alert("Cập nhật số lượng đã bán thành công!");
+      } catch (error) {
+        console.error("Error updating sold count:", error);
+        alert(error.message || "Có lỗi xảy ra khi cập nhật số lượng đã bán!");
+      }
+    }
+  };
+
+  const handleShowDetail = (product) => {
+    setSelectedProduct(product);
+    setShowDetail(true);
+  };
+
+  const handleCloseDetail = () => {
+    setShowDetail(false);
+    setSelectedProduct(null);
+  };
+
+  // Auto-calculate discount price when price or discount percent changes
+  const handlePriceChange = (e) => {
+    const price = parseInt(e.target.value) || 0;
+    const discountPercent =
+      parseInt(
+        document.querySelector('input[name="discount_percent"]').value
+      ) || 0;
+    const discountPrice = Math.round(price * (1 - discountPercent / 100));
+    document.querySelector('input[name="discount_price"]').value =
+      discountPrice;
+  };
+
+  const handleDiscountPercentChange = (e) => {
+    const price =
+      parseInt(document.querySelector('input[name="price"]').value) || 0;
+    const discountPercent = parseInt(e.target.value) || 0;
+    const discountPrice = Math.round(price * (1 - discountPercent / 100));
+    document.querySelector('input[name="discount_price"]').value =
+      discountPrice;
+  };
+
+  const clearFieldError = (e) => {
+    e.target.style.borderColor = "";
+    e.target.style.backgroundColor = "";
+  };
+
+  if (error) {
+    return (
+      <div className="sale-products-container">
+        <div
+          className="error-message"
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            color: "#ff6b6b",
+            fontSize: "16px",
+          }}
+        >
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sale-products-container">
+      <div className="sale-products-header">
+        <h2>Quản lý sản phẩm giảm giá</h2>
+        <button
+          className="add-product-btn btn-action"
+          onClick={() => {
+            setEditingProduct(null);
+            setNewSaleProduct({
+              name: "",
+              price: 0,
+              discount_percent: 0,
+              discount_price: 0,
+              stock: 0,
+              sold: 0,
+              description: "",
+              images: [""], // reset về 1 ô input ảnh
+              size_items: [],
+              categoryCode: "",
+            });
+            setShowForm(true);
+          }}
+        >
+          Thêm sản phẩm
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="form-overlay">
+          <div className="form-container">
+            <h3>{editingProduct ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Tên sản phẩm:</label>
+                <input
+                  type="text"
+                  name="name"
+                  defaultValue={editingProduct?.name || ""}
+                  placeholder="Nhập tên sản phẩm"
+                  onFocus={clearFieldError}
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Giá gốc (VNĐ):</label>
+                  <input
+                    type="number"
+                    name="price"
+                    defaultValue={editingProduct?.price || ""}
+                    onChange={handlePriceChange}
+                    onFocus={clearFieldError}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Phần trăm giảm giá (%):</label>
+                  <input
+                    type="number"
+                    name="discount_percent"
+                    min="0"
+                    max="100"
+                    defaultValue={editingProduct?.discount_percent || ""}
+                    onChange={handleDiscountPercentChange}
+                    onFocus={clearFieldError}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Giá sau giảm (VNĐ):</label>
+                  <input
+                    type="number"
+                    name="discount_price"
+                    defaultValue={editingProduct?.discount_price || ""}
+                    readOnly
+                    style={{ backgroundColor: "#f5f5f5" }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Đã bán:</label>
+                  <input
+                    type="number"
+                    name="sold"
+                    defaultValue={editingProduct?.sold || 0}
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Mô tả:</label>
+                <textarea
+                  name="description"
+                  defaultValue={editingProduct?.description || ""}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Link hình ảnh:</label>
+                {newSaleProduct.images.map((image, index) => (
+                  <div key={index} className="image-input-group">
+                    <input
+                      type="url"
+                      value={image}
+                      onChange={(e) =>
+                        handleSaleImagesChange(index, e.target.value)
+                      }
+                      placeholder={`Link hình ảnh ${index + 1}`}
+                      required={index === 0}
+                    />
+                    {newSaleProduct.images.length > 1 && (
+                      <button
+                        type="button"
+                        className="btn btn-remove"
+                        onClick={() => removeSaleImageField(index)}
+                      >
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-add-image"
+                  onClick={addSaleImageField}
+                >
+                  + Thêm hình ảnh
+                </button>
+              </div>
+
+              <div className="form-group">
+                <label>Size và số lượng:</label>
+                <div className="size-list">
+                  {["S", "M", "L", "XL"].map((size) => {
+                    const selected = newSaleProduct.size_items.find(
+                      (s) => s.size === size
+                    );
+                    return (
+                      <div key={size} className="size-item">
+                        <label className="size-checkbox">
+                          <input
+                            type="checkbox"
+                            value={size}
+                            checked={!!selected}
+                            onChange={(e) =>
+                              handleSizeToggle(size, e.target.checked)
+                            }
+                          />
+                          <span>{size}</span>
+                        </label>
+                        {selected && (
+                          <input
+                            type="number"
+                            className="quantity-input"
+                            value={selected.quantity}
+                            min="1"
+                            onChange={(e) =>
+                              handleSizeQuantityChange(size, Number(e.target.value))
+                            }
+                            placeholder="Số lượng"
+                            required
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Mã danh mục:</label>
+                <input
+                  type="text"
+                  name="categoryCode"
+                  defaultValue={editingProduct?.categoryCode || ""}
+                  required
+                />
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="save-btn">
+                  {editingProduct ? "Cập nhật" : "Thêm"}
+                </button>
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingProduct(null);
+                  }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDetail && selectedProduct && (
+        <div className="detail-overlay" onClick={handleCloseDetail}>
+          <div className="detail-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-detail-btn" onClick={handleCloseDetail}>
+              &times;
+            </button>
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              {Array.isArray(selectedProduct.images) &&
+              selectedProduct.images.length > 0 ? (
+                selectedProduct.images.map((img, index) => (
+                  <img
+                    key={index}
+                    src={img}
+                    alt={`${selectedProduct.name} - ${index + 1}`}
+                    style={{
+                      width: 120,
+                      height: 120,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                      background: "#fff",
+                    }}
+                  />
+                ))
+              ) : (
+                <img
+                  src={
+                    selectedProduct.image ||
+                    "https://via.placeholder.com/120x120?text=No+Image"
+                  }
+                  alt={selectedProduct.name || "No name"}
+                  style={{
+                    width: 120,
+                    height: 120,
+                    objectFit: "contain",
+                    borderRadius: 8,
+                    background: "#fff",
+                  }}
+                />
+              )}
+            </div>
+            <div className="detail-info">
+              <h2>{selectedProduct.name}</h2>
+              <div className="detail-row">
+                <span className="original-price">
+                  {(selectedProduct.price || 0).toLocaleString("vi-VN")} VNĐ
+                </span>
+                <span className="discount-price">
+                  {(selectedProduct.discount_price || 0).toLocaleString(
+                    "vi-VN"
+                  )}{" "}
+                  VNĐ
+                </span>
+                <span className="detail-discount">
+                  -{selectedProduct.discount_percent || 0}%
+                </span>
+              </div>
+              <div className="detail-row">
+                <b>Tồn kho:</b> {selectedProduct.stock}
+              </div>
+              <div className="detail-row">
+                <b>Đã bán:</b> {selectedProduct.sold || 0}
+              </div>
+              <div className="detail-row">
+                <b>Kích thước:</b>{" "}
+                {selectedProduct.sizes && selectedProduct.sizes.length > 0
+                  ? selectedProduct.sizes
+                      .map((s) => `${s.size} (${s.quantity})`)
+                      .join(", ")
+                  : "N/A"}
+              </div>
+              <div className="detail-row">
+                <b>Danh mục:</b> {selectedProduct.categoryCode}
+              </div>
+
+              <div className="detail-desc">
+                <b>Mô tả:</b>
+                <div>{selectedProduct.description}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="loading">Đang tải...</div>
+      ) : saleProducts.length === 0 ? (
+        <div className="empty-state">
+          <h3>Chưa có sản phẩm giảm giá</h3>
+          <p>Bắt đầu bằng cách thêm sản phẩm giảm giá đầu tiên</p>
+          <button className="add-product-btn" onClick={() => setShowForm(true)}>
+            Thêm sản phẩm
+          </button>
+        </div>
+      ) : (
+        <div className="sale-products-table-wrapper">
+          <table className="sale-products-table">
+            <thead>
+              <tr>
+                <th>Ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Giá gốc</th>
+                <th>Giá giảm</th>
+                <th>% Giảm</th>
+                <th>Tồn kho</th>
+                <th>Đã bán</th>
+                <th>Kích thước</th>
+                <th>Danh mục</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {saleProducts.map((product) => (
+                <tr key={product._id}>
+                  <td>
+                    <img
+                      src={
+                        Array.isArray(product.images) &&
+                        product.images.length > 0
+                          ? product.images[0]
+                          : product.image ||
+                            "https://via.placeholder.com/50x50?text=No+Image"
+                      }
+                      alt={product.name}
+                      className="table-product-img"
+                      onClick={() => handleShowDetail(product)}
+                      style={{
+                        cursor: "pointer",
+                        width: 50,
+                        height: 50,
+                        objectFit: "contain",
+                        borderRadius: 4,
+                      }}
+                    />
+                  </td>
+                  <td>{product.name}</td>
+                  <td>
+                    <span className="original-price">
+                      {(product.price || 0).toLocaleString("vi-VN")} VNĐ
+                    </span>
+                  </td>
+                  <td>
+                    <span className="discount-price">
+                      {(product.discount_price || 0).toLocaleString("vi-VN")}{" "}
+                      VNĐ
+                    </span>
+                  </td>
+                  <td>-{product.discount_percent || 0}%</td>
+                  <td>{product.stock}</td>
+                  <td>
+                    <span
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        handleUpdateSoldCount(product._id, product.sold || 0)
+                      }
+                    >
+                      {product.sold || 0}
+                    </span>
+                  </td>
+                  <td>
+                    {product.sizes && product.sizes.length > 0
+                      ? product.sizes
+                          .map((s) => `${s.size} (${s.quantity})`)
+                          .join(", ")
+                      : "N/A"}
+                  </td>
+                  <td>{product.categoryCode}</td>
+
+                  <td className="action-cell">
+                    <div className="action-group">
+                      <button
+                        className="btn btn-edit"
+                        onClick={() => handleEdit(product)}
+                      >
+                        Sửa
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(product._id);
+                        }}
+                        className="btn btn-delete"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SaleProducts;
